@@ -1,1 +1,0 @@
-# project3_gang_y3
