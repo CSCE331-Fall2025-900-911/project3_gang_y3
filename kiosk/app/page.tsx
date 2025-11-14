@@ -19,8 +19,8 @@ export default async function Home() {
   }
 
   return (
-    <div className="flex min-h-screen items-start justify-center bg-zinc-50 font-sans dark:bg-black p-8 text-black">
-      <main className="w-full max-w-3xl bg-white p-8 shadow rounded text-black">
+    <div className="flex min-h-screen items-start justify-center bg-zinc-50 dark:bg-zinc-900 font-sans p-8 text-black dark:text-white transition-colors">
+      <main className="w-full max-w-3xl bg-white dark:bg-zinc-800 p-8 shadow rounded text-black dark:text-white transition-colors">
         <div className="flex items-center gap-4 mb-6">
           <Image className="dark:invert" src="/next.svg" alt="Next.js" width={56} height={14} priority />
           <h1 className="text-2xl font-semibold">Kiosk — Place an order</h1>

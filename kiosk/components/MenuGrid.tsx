@@ -55,8 +55,8 @@ export default function MenuGrid({ items }: { items: Item[] }) {
 
       {customizing && (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
-          <div className="absolute inset-0 bg-black/40" onClick={cancelAdd}></div>
-          <div className="relative z-10 w-[90%] max-w-md rounded bg-white p-6 shadow-lg text-black">
+          <div className="absolute inset-0 bg-black/40 dark:bg-black/60" onClick={cancelAdd}></div>
+          <div className="relative z-10 w-[90%] max-w-md rounded bg-white dark:bg-zinc-800 p-6 shadow-lg text-black dark:text-white transition-colors">
             <h3 className="text-lg font-semibold mb-3">Customize: {customizing.name}</h3>
             <div className="mb-4">
               <div className="font-medium mb-1">Ice</div>
@@ -95,10 +95,10 @@ export default function MenuGrid({ items }: { items: Item[] }) {
             </div>
 
             <div className="flex justify-end gap-3 mt-4">
-              <button className="px-3 py-1 rounded border" onClick={cancelAdd}>
+              <button className="px-3 py-1 rounded border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors" onClick={cancelAdd}>
                 Cancel
               </button>
-              <button className="px-3 py-1 rounded bg-black text-white" onClick={confirmAdd}>
+              <button className="px-3 py-1 rounded bg-black dark:bg-white text-white dark:text-black hover:opacity-90 transition-colors" onClick={confirmAdd}>
                 Add to cart
               </button>
             </div>
