@@ -26,7 +26,7 @@ export default function MenuGrid({ items }: { items: Item[] }) {
       const newItem: CartItem = { ...it };
       setCart((s) => [...s, newItem]);
       setAddedMessage(`${it.name} added to cart!`);
-      setTimeout(() => setAddedMessage(null), 1250);
+      setTimeout(() => setAddedMessage(null), 1500);
     }
   }
 
@@ -35,7 +35,7 @@ export default function MenuGrid({ items }: { items: Item[] }) {
     const newItem: CartItem = { ...customizing, custom: { ice, sugar } };
     setCart((s) => [...s, newItem]);
     setAddedMessage(`${customizing.name} added to cart!`);
-    setTimeout(() => setAddedMessage(null), 1250);
+    setTimeout(() => setAddedMessage(null), 1500);
     setCustomizing(null);
   }
 
