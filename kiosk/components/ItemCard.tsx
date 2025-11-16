@@ -13,6 +13,7 @@ export default function ItemCard({ item, onAdd }: { item: Item; onAdd: (it: Item
         <button
           className="ml-4 rounded bg-black dark:bg-white px-3 py-1 text-sm text-white dark:text-black hover:opacity-90 transition-colors"
           onClick={() => onAdd(item)}
+          aria-label={`Add ${item.name} to cart`}   // ⭐ THIS IS THE CHANGE
         >
           Add
         </button>
