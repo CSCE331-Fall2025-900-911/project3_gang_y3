@@ -13,6 +13,13 @@ export default function MenuGrid({ items }: { items: Item[] }) {
   const [sugar, setSugar] = useState<'low' | 'medium' | 'high'>('medium');
   const [addedMessage, setAddedMessage] = useState<string | null>(null);
 
+  const grouped = items.reduce((acc: Record<string, Item[]>, it) => {
+    const cat = it.category?.trim() || "Other";
+    if (!acc[cat]) acc[cat] = [];
+    acc[cat].push(it);
+    return acc;
+  }, {});
+
   function requestAdd(it: Item) {
     const cat = (it.category || '').toString().trim().toLowerCase();
     const customizable = ['milk tea', 'fruit tea', 'specialty drinks', 'specialty'];
@@ -49,9 +56,16 @@ export default function MenuGrid({ items }: { items: Item[] }) {
 
   return (
     <div className="relative">
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
-        {items.map((it, idx) => (
-          <ItemCard key={it.id ?? `${it.name ?? 'item'}-${idx}`} item={it} onAdd={requestAdd} />
+      <div className="flex flex-col gap-10">
+        {Object.entries(grouped).map(([category, list]) => (
+          <div key={category}>
+            <h2 className="text-xl font-semibold mb-3 text-black dark:text-white">{category}</h2>
+            <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
+              {list.map((it, idx) => (
+                <ItemCard key={it.id ?? `${it.name ?? 'item'}-${idx}`} item={it} onAdd={requestAdd} />
+              ))}
+            </div>
+          </div>
         ))}
       </div>
 
@@ -68,13 +82,7 @@ export default function MenuGrid({ items }: { items: Item[] }) {
               <div className="flex gap-3">
                 {(['low', 'medium', 'high'] as const).map((lvl) => (
                   <label key={lvl} className="flex items-center gap-2">
-                    <input
-                      type="radio"
-                      name="ice"
-                      value={lvl}
-                      checked={ice === lvl}
-                      onChange={() => setIce(lvl)}
-                    />
+                    <input type="radio" name="ice" value={lvl} checked={ice === lvl} onChange={() => setIce(lvl)} />
                     <span className="capitalize">{lvl}</span>
                   </label>
                 ))}
@@ -86,13 +94,7 @@ export default function MenuGrid({ items }: { items: Item[] }) {
               <div className="flex gap-3">
                 {(['low', 'medium', 'high'] as const).map((lvl) => (
                   <label key={lvl} className="flex items-center gap-2">
-                    <input
-                      type="radio"
-                      name="sugar"
-                      value={lvl}
-                      checked={sugar === lvl}
-                      onChange={() => setSugar(lvl)}
-                    />
+                    <input type="radio" name="sugar" value={lvl} checked={sugar === lvl} onChange={() => setSugar(lvl)} />
                     <span className="capitalize">{lvl}</span>
                   </label>
                 ))}
@@ -100,17 +102,10 @@ export default function MenuGrid({ items }: { items: Item[] }) {
             </div>
 
             <div className="flex justify-end gap-3 mt-4">
-              <button
-                className="px-3 py-1 rounded border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-                onClick={cancelAdd}
-              >
+              <button className="px-3 py-1 rounded border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors" onClick={cancelAdd}>
                 Cancel
               </button>
-
-              <button
-                className="px-3 py-1 rounded bg-black dark:bg-white text-white dark:text-black hover:opacity-90 transition-colors"
-                onClick={confirmAdd}
-              >
+              <button className="px-3 py-1 rounded bg-black dark:bg-white text-white dark:text-black hover:opacity-90 transition-colors" onClick={confirmAdd}>
                 Add to cart
               </button>
             </div>
