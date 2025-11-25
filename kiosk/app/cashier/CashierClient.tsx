@@ -58,7 +58,6 @@ export default function CashierClient({ menuItems }: CashierClientProps) {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Menu Items */}
           <div className="lg:col-span-2">
             <h2 className="text-xl font-semibold mb-4">Menu Items</h2>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
@@ -72,7 +71,6 @@ export default function CashierClient({ menuItems }: CashierClientProps) {
             </div>
           </div>
 
-          {/* Cart */}
           <div className="lg:col-span-1">
             <Cart
               items={cart}
@@ -82,7 +80,6 @@ export default function CashierClient({ menuItems }: CashierClientProps) {
         </div>
       </div>
 
-      {/* Customization Modal */}
       {customizing && (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
           <div className="absolute inset-0 bg-black/40 dark:bg-black/60" onClick={cancelAdd}></div>

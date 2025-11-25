@@ -11,7 +11,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Try multiple LibreTranslate instances
     const instances = [
       'https://libretranslate.de/translate',
       'https://translate.argosopentech.com/translate',
@@ -51,7 +50,6 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // If all instances fail, return the original text
     console.error('All translation instances failed:', lastError);
     return NextResponse.json({
       translatedText: text,

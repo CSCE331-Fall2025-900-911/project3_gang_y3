@@ -21,7 +21,6 @@ export default function MagnifierToggle() {
       const x = e.clientX;
       const y = e.clientY;
       
-      // Apply zoom effect to the body
       document.body.style.transform = `scale(2)`;
       document.body.style.transformOrigin = `${x}px ${y}px`;
       document.body.style.transition = 'transform 0.1s ease-out';

@@ -27,17 +27,13 @@ export async function POST(request: NextRequest) {
     
     await client.query('BEGIN');
     
-    // Calculate total
     const totalAmount = items.reduce((sum, item) => sum + item.price, 0);
     
-    // Get next order_id
     const maxIdResult = await client.query('SELECT COALESCE(MAX(order_id), 0) + 1 as next_id FROM orders');
     const nextOrderId = maxIdResult.rows[0].next_id;
     
-    // Create item_link (comma-separated menu_item_ids)
     const itemLink = items.map(item => item.id).join(',');
     
-    // Create custom_id (comma-separated custom options)
     const customId = items.map(item => {
       if (item.custom) {
         return `ice:${item.custom.ice},sugar:${item.custom.sugar}`;
@@ -45,7 +41,6 @@ export async function POST(request: NextRequest) {
       return 'none';
     }).join('|');
     
-    // Insert order
     await client.query(
       `INSERT INTO orders (order_id, order_date, order_time, total_amount, payment_method, order_status, customer_id, item_link, custom_id)
        VALUES ($1, CURRENT_DATE, CURRENT_TIME, $2, $3, $4, $5, $6, $7)`,

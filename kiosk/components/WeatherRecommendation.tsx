@@ -13,7 +13,6 @@ export default function WeatherRecommendation({ menuItems }: RecommendationProps
   const [recommendedItem, setRecommendedItem] = useState<any>(null);
 
   useEffect(() => {
-    // Fetch weather from College Station, TX
     fetch('https://api.open-meteo.com/v1/forecast?latitude=30.6280&longitude=-96.3344&current_weather=true&temperature_unit=fahrenheit')
       .then(res => res.json())
       .then(data => {
@@ -29,14 +28,12 @@ export default function WeatherRecommendation({ menuItems }: RecommendationProps
     let item;
 
     if (isWarm) {
-      // Get drinks for warm weather
       const drinks = menuItems.filter(i => {
         const cat = (i.category || '').toLowerCase();
         return cat.includes('tea') || cat.includes('drink');
       });
       item = drinks.length > 0 ? drinks[0] : menuItems[0];
     } else {
-      // Get snacks for cold weather
       const snacks = menuItems.filter(i => {
         const cat = (i.category || '').toLowerCase();
         return cat.includes('snack') || cat.includes('dessert');
