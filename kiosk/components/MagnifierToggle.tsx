@@ -58,7 +58,7 @@ export default function MagnifierToggle() {
       onClick={toggleMagnifier}
       className={`fixed bottom-4 right-4 z-50 p-3 rounded-full transition-colors shadow-lg ${
         isActive
-          ? 'bg-purple-500 hover:bg-purple-600 dark:bg-purple-600 dark:hover:bg-purple-700'
+          ? 'bg-blue-500 hover:bg-blue-600 dark:bg-blue-600 dark:hover:bg-blue-700'
           : 'bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600'
       }`}
       aria-label="Toggle magnifier"

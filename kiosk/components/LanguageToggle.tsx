@@ -25,7 +25,7 @@ export default function LanguageToggle() {
   return (
     <button
       onClick={toggleLanguage}
-      className="fixed top-4 right-20 z-50 px-4 py-3 rounded-full bg-purple-500 hover:bg-purple-600 dark:bg-purple-600 dark:hover:bg-purple-700 transition-colors shadow-lg"
+      className="fixed top-4 right-20 z-50 px-4 py-3 rounded-full bg-blue-500 hover:bg-blue-600 dark:bg-blue-600 dark:hover:bg-blue-700 transition-colors shadow-lg"
       aria-label="Toggle language"
     >
       <span className="font-semibold text-white">
