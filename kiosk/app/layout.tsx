@@ -1,10 +1,15 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import "./magnifier.css";
 import { ThemeProvider } from "../components/ThemeProvider";
+import { LanguageProvider } from "../components/LanguageProvider";
 import ThemeToggle from "../components/ThemeToggle";
-import ManagerButton from "../components/ManagerButton";
-import CashierButton from "../components/CashierButton";
+import LanguageToggle from "../components/LanguageToggle";
+import MagnifierToggle from "../components/MagnifierToggle";
+import NavigationMenu from "../components/NavigationMenu";
+
+export const dynamic = 'force-dynamic';
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -32,10 +37,13 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <ThemeProvider>
-          <ThemeToggle />
-          <ManagerButton />
-          <CashierButton />
-          {children}
+          <LanguageProvider>
+            <NavigationMenu />
+            <ThemeToggle />
+            <LanguageToggle />
+            <MagnifierToggle />
+            {children}
+          </LanguageProvider>
         </ThemeProvider>
       </body>
     </html>
