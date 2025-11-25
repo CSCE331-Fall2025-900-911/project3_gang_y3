@@ -6,7 +6,7 @@ import { translateMenuItem } from '../lib/translations';
 type Item = { id: number | null; name: string; price: number };
 type CartItem = Item & { custom?: { ice: 'low' | 'medium' | 'high'; sugar: 'low' | 'medium' | 'high' } };
 
-export default function Cart({ items, onClear }: { items: CartItem[]; onClear: () => void }) {
+export default function Cart({ items, onClear, onRemove }: { items: CartItem[]; onClear: () => void; onRemove?: (index: number) => void }) {
   const { t, language } = useLanguage();
   const [isPlacing, setIsPlacing] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
@@ -62,10 +62,19 @@ export default function Cart({ items, onClear }: { items: CartItem[]; onClear: (
           <div className="text-sm text-zinc-500 dark:text-zinc-400">{t('Cart is empty')}</div>
         ) : (
           items.map((it, idx) => (
-            <div key={`${it.id ?? it.name}-${idx}`} className="py-1 text-sm text-black dark:text-white">
+            <div key={`${it.id ?? it.name}-${idx}`} className="py-1 text-sm text-black dark:text-white group">
               <div className="flex items-center justify-between">
-                <div className="font-medium">{translateMenuItem(it.name, language)}</div>
-                <div className="text-gray-600 dark:text-gray-300">${(it.price || 0).toFixed(2)}</div>
+                <div className="font-medium flex-1">{translateMenuItem(it.name, language)}</div>
+                <div className="text-gray-600 dark:text-gray-300 mr-2">${(it.price || 0).toFixed(2)}</div>
+                {onRemove && (
+                  <button
+                    onClick={() => onRemove(idx)}
+                    className="text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 opacity-0 group-hover:opacity-100 transition-opacity"
+                    aria-label="Remove item"
+                  >
+                    ×
+                  </button>
+                )}
               </div>
               {it.custom && (
                 <div className="text-xs text-zinc-600 dark:text-zinc-400">{t('Ice')}: {t(it.custom.ice)}, {t('Sugar')}: {t(it.custom.sugar)}</div>

@@ -54,6 +54,10 @@ export default function MenuGrid({ items }: { items: Item[] }) {
     setCart([]);
   }
 
+  function removeItem(index: number) {
+    setCart((prev) => prev.filter((_, i) => i !== index));
+  }
+
   return (
     <div className="relative">
       <div className="flex flex-col gap-10">
@@ -69,7 +73,7 @@ export default function MenuGrid({ items }: { items: Item[] }) {
         ))}
       </div>
 
-      <Cart items={cart} onClear={clearCart} />
+      <Cart items={cart} onClear={clearCart} onRemove={removeItem} />
 
       {customizing && (
         <div className="fixed inset-0 z-50 flex items-center justify-center">

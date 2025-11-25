@@ -49,6 +49,10 @@ export default function CashierClient({ menuItems }: CashierClientProps) {
     setCart([]);
   };
 
+  const removeItem = (index: number) => {
+    setCart(prev => prev.filter((_, i) => i !== index));
+  };
+
   return (
     <div className="min-h-screen bg-zinc-50 dark:bg-zinc-900 font-sans p-8 text-black dark:text-white transition-colors">
       <div className="max-w-7xl mx-auto">
@@ -75,6 +79,7 @@ export default function CashierClient({ menuItems }: CashierClientProps) {
             <Cart
               items={cart}
               onClear={clearCart}
+              onRemove={removeItem}
             />
           </div>
         </div>

@@ -71,6 +71,8 @@ export const translations: Record<string, string> = {
   "Specialty": "Especial",
   "Snacks": "Bocadillos",
   "Desserts": "Postres",
+  "Snacks / Desserts": "Bocadillos / Postres",
+  "Snacks/Desserts": "Bocadillos/Postres",
   "Appetizers": "Aperitivos",
 };
 
