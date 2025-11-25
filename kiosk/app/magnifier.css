@@ -1,0 +1,8 @@
+/* Magnifier effect styles */
+.magnifier-zoom-container {
+  transition: none !important;
+}
+
+.magnifier-active .magnifier-zoom-container {
+  will-change: transform;
+}
