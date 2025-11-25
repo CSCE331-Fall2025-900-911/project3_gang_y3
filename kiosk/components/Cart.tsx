@@ -1,10 +1,13 @@
 "use client";
 import React, { useState } from 'react';
+import { useLanguage } from './LanguageProvider';
+import { translateMenuItem } from '../lib/translations';
 
 type Item = { id: number | null; name: string; price: number };
 type CartItem = Item & { custom?: { ice: 'low' | 'medium' | 'high'; sugar: 'low' | 'medium' | 'high' } };
 
 export default function Cart({ items, onClear }: { items: CartItem[]; onClear: () => void }) {
+  const { t, language } = useLanguage();
   const [isPlacing, setIsPlacing] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   
@@ -12,7 +15,7 @@ export default function Cart({ items, onClear }: { items: CartItem[]; onClear: (
   
   const placeOrder = async () => {
     if (items.length === 0) {
-      setMessage({ type: 'error', text: 'Cart is empty' });
+      setMessage({ type: 'error', text: t('Cart is empty') });
       return;
     }
     
@@ -31,16 +34,16 @@ export default function Cart({ items, onClear }: { items: CartItem[]; onClear: (
       const data = await response.json();
       
       if (data.success) {
-        setMessage({ type: 'success', text: `Order #${data.orderId} placed successfully!` });
+        setMessage({ type: 'success', text: `${t('Order')} #${data.orderId} ${t('placed successfully!')}` });
         setTimeout(() => {
           onClear();
           setMessage(null);
         }, 2000);
       } else {
-        setMessage({ type: 'error', text: data.error || 'Failed to place order' });
+        setMessage({ type: 'error', text: data.error || t('Failed to place order') });
       }
     } catch (error) {
-      setMessage({ type: 'error', text: 'Failed to connect to server' });
+      setMessage({ type: 'error', text: t('Failed to connect to server') });
     } finally {
       setIsPlacing(false);
     }
@@ -49,30 +52,30 @@ export default function Cart({ items, onClear }: { items: CartItem[]; onClear: (
   return (
     <div className="fixed right-6 bottom-6 w-80 rounded border border-gray-200 dark:border-gray-600 bg-white dark:bg-zinc-800 p-4 shadow-lg text-black dark:text-white transition-colors">
       <div className="flex items-center justify-between mb-2">
-        <div className="font-semibold text-black dark:text-white">Cart</div>
+        <div className="font-semibold text-black dark:text-white">{t('Cart')}</div>
         <button className="text-sm text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200" onClick={onClear}>
-          Clear
+          {t('Clear')}
         </button>
       </div>
       <div className="max-h-48 overflow-auto">
         {items.length === 0 ? (
-          <div className="text-sm text-zinc-500 dark:text-zinc-400">Cart is empty</div>
+          <div className="text-sm text-zinc-500 dark:text-zinc-400">{t('Cart is empty')}</div>
         ) : (
           items.map((it, idx) => (
             <div key={`${it.id ?? it.name}-${idx}`} className="py-1 text-sm text-black dark:text-white">
               <div className="flex items-center justify-between">
-                <div className="font-medium">{it.name}</div>
+                <div className="font-medium">{translateMenuItem(it.name, language)}</div>
                 <div className="text-gray-600 dark:text-gray-300">${(it.price || 0).toFixed(2)}</div>
               </div>
               {it.custom && (
-                <div className="text-xs text-zinc-600 dark:text-zinc-400">Ice: {it.custom.ice}, Sugar: {it.custom.sugar}</div>
+                <div className="text-xs text-zinc-600 dark:text-zinc-400">{t('Ice')}: {t(it.custom.ice)}, {t('Sugar')}: {t(it.custom.sugar)}</div>
               )}
             </div>
           ))
         )}
       </div>
       <div className="mt-3 flex items-center justify-between">
-        <div className="font-semibold">Total</div>
+        <div className="font-semibold">{t('Total')}</div>
         <div className="font-semibold">${total.toFixed(2)}</div>
       </div>
       
@@ -92,7 +95,7 @@ export default function Cart({ items, onClear }: { items: CartItem[]; onClear: (
           onClick={placeOrder}
           disabled={isPlacing || items.length === 0}
         >
-          {isPlacing ? 'Placing order...' : 'Place order'}
+          {isPlacing ? t('Placing order...') : t('Place order')}
         </button>
       </div>
     </div>
