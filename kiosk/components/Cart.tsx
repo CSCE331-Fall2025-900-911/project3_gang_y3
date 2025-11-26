@@ -50,7 +50,7 @@ export default function Cart({ items, onClear, onRemove }: { items: CartItem[]; 
   };
   
   return (
-    <div className="fixed right-6 bottom-6 w-80 rounded border border-gray-200 dark:border-gray-600 bg-white dark:bg-zinc-800 p-4 shadow-lg text-black dark:text-white transition-colors">
+    <div className="fixed right-6 bottom-6 w-80 rounded border border-gray-200 dark:border-gray-600 bg-white dark:bg-zinc-800 p-4 shadow-2xl text-black dark:text-white transition-colors">
       <div className="flex items-center justify-between mb-2">
         <div className="font-semibold text-black dark:text-white">{t('Cart')}</div>
         <button className="text-sm text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200" onClick={onClear}>
