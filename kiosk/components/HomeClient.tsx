@@ -41,7 +41,7 @@ export default function HomeClient({ menuItems, error, hasDbUrl }: HomeClientPro
           <div>
             {menuItems.length > 0 && (
               <div>
-                <div className="mb-3 font-medium">{t("Menu")}</div>
+                <div className="mb-3 text-2xl font-semibold">{t("Menu")}</div>
                 <MenuGrid items={menuItems} />
               </div>
             )}
