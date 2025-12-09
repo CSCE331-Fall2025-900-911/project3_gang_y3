@@ -4,15 +4,20 @@ import { useLanguage } from './LanguageProvider';
 import { translateMenuItem } from '../lib/translations';
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
 import { TOPPINGS } from '../lib/toppings';
 =======
 >>>>>>> Stashed changes
 =======
 >>>>>>> Stashed changes
+=======
+import { TOPPINGS } from '../lib/toppings';
+>>>>>>> Stashed changes
 
 type Item = { id: number | null; name: string; price: number };
 type CartItem = Item & { quantity: number; custom?: { temperature: 'hot' | 'cold'; ice: 'low' | 'medium' | 'high'; sugar: 'low' | 'medium' | 'high'; toppings?: number[] } };
 
+<<<<<<< Updated upstream
 <<<<<<< Updated upstream
 export default function Cart({ items, onClear, onRemove, onUpdateQuantity }: { items: CartItem[]; onClear: () => void; onRemove?: (index: number) => void; onUpdateQuantity?: (index: number, delta: number) => void }) {
 =======
@@ -20,6 +25,9 @@ export default function Cart({ items, onClear }: { items: CartItem[]; onClear: (
 <<<<<<< Updated upstream
 >>>>>>> Stashed changes
 =======
+>>>>>>> Stashed changes
+=======
+export default function Cart({ items, onClear, onRemove, onUpdateQuantity }: { items: CartItem[]; onClear: () => void; onRemove?: (index: number) => void; onUpdateQuantity?: (index: number, delta: number) => void }) {
 >>>>>>> Stashed changes
   const { t, language } = useLanguage();
   const [isPlacing, setIsPlacing] = useState(false);
@@ -57,12 +65,16 @@ export default function Cart({ items, onClear }: { items: CartItem[]; onClear: (
         setMessage({ type: 'error', text: data.error || t('Failed to place order') });
       }
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
     } catch {
 =======
     } catch (error) {
 <<<<<<< Updated upstream
 >>>>>>> Stashed changes
 =======
+>>>>>>> Stashed changes
+=======
+    } catch {
 >>>>>>> Stashed changes
       setMessage({ type: 'error', text: t('Failed to connect to server') });
     } finally {
@@ -91,6 +103,9 @@ export default function Cart({ items, onClear }: { items: CartItem[]; onClear: (
               <div className="flex items-center justify-between">
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
+=======
+>>>>>>> Stashed changes
                 <div className="flex items-center gap-2">
                   {onUpdateQuantity && (
                     <>
@@ -131,6 +146,7 @@ export default function Cart({ items, onClear }: { items: CartItem[]; onClear: (
                     </div>
                   )}
                 </div>
+<<<<<<< Updated upstream
 =======
 =======
 >>>>>>> Stashed changes
@@ -140,6 +156,8 @@ export default function Cart({ items, onClear }: { items: CartItem[]; onClear: (
               {it.custom && (
                 <div className="text-xs text-zinc-600 dark:text-zinc-400">{t('Ice')}: {t(it.custom.ice)}, {t('Sugar')}: {t(it.custom.sugar)}</div>
 <<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
 >>>>>>> Stashed changes
 =======
 >>>>>>> Stashed changes

@@ -1,13 +1,15 @@
 "use client";
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import Image from "next/image";
 import ItemCard from '../../components/ItemCard';
 import Cart from '../../components/Cart';
 import { useLanguage } from '../../components/LanguageProvider';
 import { translateMenuItem } from '../../lib/translations';
+import { TOPPINGS } from '../../lib/toppings';
 
 type MenuItem = { id: number | null; name: string; price: number; category?: string | null };
-type CartItem = MenuItem & { custom?: { ice: 'low' | 'medium' | 'high'; sugar: 'low' | 'medium' | 'high' } };
+type CartItem = MenuItem & { quantity: number; custom?: { temperature: 'hot' | 'cold'; ice: 'low' | 'medium' | 'high'; sugar: 'low' | 'medium' | 'high'; toppings?: number[] } };
 
 interface CashierClientProps {
   menuItems: MenuItem[];
@@ -15,10 +17,27 @@ interface CashierClientProps {
 
 export default function CashierClient({ menuItems }: CashierClientProps) {
   const { t, language } = useLanguage();
+  const router = useRouter();
   const [cart, setCart] = useState<CartItem[]>([]);
   const [customizing, setCustomizing] = useState<MenuItem | null>(null);
+  const [quantity, setQuantity] = useState(1);
+  const [temperature, setTemperature] = useState<'hot' | 'cold'>('cold');
   const [ice, setIce] = useState<'low' | 'medium' | 'high'>('medium');
   const [sugar, setSugar] = useState<'low' | 'medium' | 'high'>('medium');
+  const [selectedToppings, setSelectedToppings] = useState<number[]>([]);
+
+  useEffect(() => {
+    const userRole = sessionStorage.getItem('userRole');
+    if (userRole !== 'Cashier') {
+      router.push('/');
+    }
+  }, [router]);
+
+  const handleSignOut = () => {
+    sessionStorage.removeItem('userRole');
+    sessionStorage.removeItem('username');
+    router.push('/');
+  };
 
   const requestAdd = (item: MenuItem) => {
     const cat = (item.category || '').toString().trim().toLowerCase();
@@ -27,22 +46,43 @@ export default function CashierClient({ menuItems }: CashierClientProps) {
 
     if (needsCustom) {
       setCustomizing(item);
+      setQuantity(1);
+      setTemperature('cold');
       setIce('medium');
       setSugar('medium');
+      setSelectedToppings([]);
     } else {
-      setCart(prev => [...prev, item]);
+      setCart(prev => [...prev, { ...item, quantity: 1 }]);
     }
   };
 
   const confirmAdd = () => {
     if (!customizing) return;
-    const newItem: CartItem = { ...customizing, custom: { ice, sugar } };
+    const newItem: CartItem = { 
+      ...customizing,
+      quantity,
+      custom: { temperature, ice, sugar, toppings: selectedToppings.length > 0 ? selectedToppings : undefined } 
+    };
     setCart(prev => [...prev, newItem]);
     setCustomizing(null);
   };
 
-  const cancelAdd = () => {
-    setCustomizing(null);
+  const toggleTopping = (toppingId: number) => {
+    setSelectedToppings(prev => 
+      prev.includes(toppingId) 
+        ? prev.filter(id => id !== toppingId)
+        : [...prev, toppingId]
+    );
+  };
+
+  const updateItemQuantity = (index: number, delta: number) => {
+    setCart(prev => prev.map((item, i) => {
+      if (i === index) {
+        const newQty = Math.max(1, item.quantity + delta);
+        return { ...item, quantity: newQty };
+      }
+      return item;
+    }));
   };
 
   const clearCart = () => {
@@ -53,8 +93,23 @@ export default function CashierClient({ menuItems }: CashierClientProps) {
     setCart(prev => prev.filter((_, i) => i !== index));
   };
 
+  const cancelAdd = () => {
+    setCustomizing(null);
+    setQuantity(1);
+    setTemperature('cold');
+    setIce('medium');
+    setSugar('medium');
+    setSelectedToppings([]);
+  };
+
   return (
     <div className="min-h-screen bg-zinc-50 dark:bg-zinc-900 font-sans p-8 text-black dark:text-white transition-colors">
+      <button
+        onClick={handleSignOut}
+        className="fixed top-4 right-36 z-50 px-4 py-3 rounded-full bg-red-500 hover:bg-red-600 dark:bg-red-600 dark:hover:bg-red-700 text-white font-semibold transition-colors shadow-lg"
+      >
+        {t("Sign Out")}
+      </button>
       <div className="max-w-7xl mx-auto">
         <div className="flex items-center gap-4 mb-6">
           <Image className="dark:invert" src="/next.svg" alt="Next.js" width={56} height={14} priority />
@@ -80,6 +135,7 @@ export default function CashierClient({ menuItems }: CashierClientProps) {
               items={cart}
               onClear={clearCart}
               onRemove={removeItem}
+              onUpdateQuantity={updateItemQuantity}
             />
           </div>
         </div>
@@ -93,6 +149,43 @@ export default function CashierClient({ menuItems }: CashierClientProps) {
               {t("Customize:")} {translateMenuItem(customizing.name, language)}
             </h3>
             
+            <div className="mb-4">
+              <div className="font-medium mb-2">{t("Quantity")}</div>
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                  className="w-8 h-8 rounded border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center justify-center text-lg font-semibold"
+                >
+                  −
+                </button>
+                <span className="text-lg font-semibold w-8 text-center">{quantity}</span>
+                <button
+                  onClick={() => setQuantity(quantity + 1)}
+                  className="w-8 h-8 rounded border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center justify-center text-lg font-semibold"
+                >
+                  +
+                </button>
+              </div>
+            </div>
+
+            <div className="mb-4">
+              <div className="font-medium mb-1">{t("Temperature")}</div>
+              <div className="flex gap-3">
+                {(['hot', 'cold'] as const).map((temp) => (
+                  <label key={temp} className="flex items-center gap-2">
+                    <input
+                      type="radio"
+                      name="temperature"
+                      value={temp}
+                      checked={temperature === temp}
+                      onChange={() => setTemperature(temp)}
+                    />
+                    <span className="capitalize">{t(temp)}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+
             <div className="mb-4">
               <div className="font-medium mb-1">{t("Ice")}</div>
               <div className="flex gap-3">
@@ -124,6 +217,23 @@ export default function CashierClient({ menuItems }: CashierClientProps) {
                       onChange={() => setSugar(lvl)}
                     />
                     <span className="capitalize">{t(lvl)}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            <div className="mb-4">
+              <div className="font-medium mb-2">{t("Toppings")} ({t("optional")})</div>
+              <div className="grid grid-cols-2 gap-2">
+                {TOPPINGS.map((topping) => (
+                  <label key={topping.id} className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={selectedToppings.includes(topping.id)}
+                      onChange={() => toggleTopping(topping.id)}
+                      className="cursor-pointer"
+                    />
+                    <span className="text-sm">{topping.name}</span>
                   </label>
                 ))}
               </div>

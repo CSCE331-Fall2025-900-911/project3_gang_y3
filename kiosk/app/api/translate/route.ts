@@ -11,50 +11,39 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const instances = [
-      'https://libretranslate.de/translate',
-      'https://translate.argosopentech.com/translate',
-      'https://libretranslate.com/translate',
-    ];
-
-    let lastError = null;
-
-    for (const apiUrl of instances) {
-      try {
-        const response = await fetch(apiUrl, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            q: text,
-            source: 'en',
-            target: targetLang === 'es' ? 'es' : 'en',
-            format: 'text',
-          }),
-          signal: AbortSignal.timeout(5000), // 5 second timeout
-        });
-
-        if (response.ok) {
-          const data = await response.json();
-          return NextResponse.json({
-            translatedText: data.translatedText || text,
-          });
-        }
-        
-        lastError = `${apiUrl} returned ${response.status}`;
-      } catch (err) {
-        lastError = err instanceof Error ? err.message : String(err);
-        console.log(`Failed to translate with ${apiUrl}:`, lastError);
-        continue;
-      }
+    const apiKey = process.env.GOOGLE_TRANSLATE_API_KEY;
+    if (!apiKey) {
+      return NextResponse.json({ error: 'API key not configured' }, { status: 500 });
     }
 
-    console.error('All translation instances failed:', lastError);
-    return NextResponse.json({
-      translatedText: text,
-      error: 'Translation unavailable',
+    const url = `https://translation.googleapis.com/language/translate/v2?key=${apiKey}`;
+    
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        q: text,
+        source: 'en',
+        target: targetLang === 'es' ? 'es' : 'en',
+        format: 'text',
+      }),
     });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      console.error('Google Translate API error:', errorData);
+      return NextResponse.json(
+        { error: 'Translation failed', details: errorData },
+        { status: response.status }
+      );
+    }
+
+    const data = await response.json();
+    const translatedText = data.data.translations[0].translatedText;
+
+    return NextResponse.json({ translatedText });
   } catch (error) {
     console.error('Translation error:', error);
     return NextResponse.json(
