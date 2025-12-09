@@ -1,5 +1,5 @@
 "use client";
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 import { translate as translateText } from '../lib/translations';
 
 type Language = 'en' | 'es';
@@ -13,15 +13,33 @@ interface LanguageContextType {
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
 
 export function LanguageProvider({ children }: { children: ReactNode }) {
-  const [language, setLanguage] = useState<Language>(() => {
+  const [language, setLanguage] = useState<Language>('en');
+  const [updateTrigger, setUpdateTrigger] = useState(0);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
     if (typeof window !== 'undefined') {
       const stored = localStorage.getItem('language');
       if (stored === 'en' || stored === 'es') {
-        return stored;
+        setLanguage(stored);
       }
     }
-    return 'en';
-  });
+  }, []);
+
+  useEffect(() => {
+    // Re-render every 100ms to pick up new translations from cache
+    if (mounted && language === 'es') {
+      const interval = setInterval(() => {
+        setUpdateTrigger(prev => prev + 1);
+      }, 100);
+      
+      // Stop after 5 seconds
+      setTimeout(() => clearInterval(interval), 5000);
+      
+      return () => clearInterval(interval);
+    }
+  }, [language, mounted]);
 
   const toggleLanguage = () => {
     setLanguage((prev) => {
