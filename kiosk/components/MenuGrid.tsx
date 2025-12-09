@@ -2,14 +2,7 @@
 import React, { useState } from 'react';
 import ItemCard from './ItemCard';
 import Cart from './Cart';
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
 import { TOPPINGS } from '../lib/toppings';
-=======
->>>>>>> Stashed changes
-=======
-import { TOPPINGS } from '../lib/toppings';
->>>>>>> Stashed changes
 import { useLanguage } from './LanguageProvider';
 import { translateMenuItem } from '../lib/translations';
 
@@ -119,10 +112,6 @@ export default function MenuGrid({ items }: { items: Item[] }) {
           <div className="absolute inset-0 bg-black/40 dark:bg-black/60" onClick={cancelAdd}></div>
           <div className="relative z-10 w-[90%] max-w-md rounded bg-white dark:bg-zinc-800 p-6 shadow-lg text-black dark:text-white transition-colors">
             <h3 className="text-lg font-semibold mb-3">{t("Customize:")} {translateMenuItem(customizing.name, language)}</h3>
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-=======
->>>>>>> Stashed changes
 
             <div className="mb-4">
               <div className="font-medium mb-2">{t("Quantity")}</div>
@@ -145,49 +134,18 @@ export default function MenuGrid({ items }: { items: Item[] }) {
 
             <div className="mb-4">
               <div className="font-medium mb-1">{t("Temperature")}</div>
-<<<<<<< Updated upstream
               <div className="flex gap-3">
                 {(['hot', 'cold'] as const).map((temp) => (
                   <label key={temp} className="flex items-center gap-2">
                     <input type="radio" name="temperature" value={temp} checked={temperature === temp} onChange={() => setTemperature(temp)} />
                     <span className="capitalize">{t(temp)}</span>
-=======
-            <div className="mb-4">
-              <div className="font-medium mb-1">{t("Ice")}</div>
-              <div className="flex gap-3">
-                {(['low', 'medium', 'high'] as const).map((lvl) => (
-                  <label key={lvl} className="flex items-center gap-2">
-                    <input
-                      type="radio"
-                      name="ice"
-                      value={lvl}
-                      checked={ice === lvl}
-                      onChange={() => setIce(lvl)}
-                    />
-                    <span className="capitalize">{t(lvl)}</span>
->>>>>>> Stashed changes
-=======
-              <div className="flex gap-3">
-                {(['hot', 'cold'] as const).map((temp) => (
-                  <label key={temp} className="flex items-center gap-2">
-                    <input type="radio" name="temperature" value={temp} checked={temperature === temp} onChange={() => setTemperature(temp)} />
-                    <span className="capitalize">{t(temp)}</span>
->>>>>>> Stashed changes
                   </label>
                 ))}
               </div>
             </div>
 
             <div className="mb-4">
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
               <div className="font-medium mb-1">{t("Ice")}</div>
-=======
-              <div className="font-medium mb-1">{t("Sugar")}</div>
->>>>>>> Stashed changes
-=======
-              <div className="font-medium mb-1">{t("Ice")}</div>
->>>>>>> Stashed changes
               <div className="flex gap-3">
                 {(['low', 'medium', 'high'] as const).map((lvl) => (
                   <label key={lvl} className="flex items-center gap-2">
@@ -221,15 +179,7 @@ export default function MenuGrid({ items }: { items: Item[] }) {
                       onChange={() => toggleTopping(topping.id)}
                       className="cursor-pointer"
                     />
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
                     <span className="text-sm">{t(topping.name)}</span>
-=======
-                    <span className="capitalize">{t(lvl)}</span>
->>>>>>> Stashed changes
-=======
-                    <span className="text-sm">{t(topping.name)}</span>
->>>>>>> Stashed changes
                   </label>
                 ))}
               </div>
