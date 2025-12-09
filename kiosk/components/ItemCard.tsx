@@ -7,7 +7,7 @@ type Item = { id: number | null; name: string; price: number; category?: string 
 
 export default function ItemCard({ item, onAdd }: { item: Item; onAdd: (it: Item) => void }) {
   const { t, language } = useLanguage();
-  
+
   return (
     <div className="border border-gray-200 dark:border-gray-600 rounded-lg p-4 flex flex-col bg-gradient-to-br from-white to-gray-50 dark:from-zinc-700 dark:to-zinc-800 transition-all duration-300 hover:shadow-xl hover:-translate-y-2 hover:scale-[1.05] cursor-default">
       <div className="font-semibold text-base text-black dark:text-white mb-1">{translateMenuItem(item.name, language)}</div>
