@@ -48,7 +48,7 @@ export default function NavigationMenu() {
                 role="menuitem"
                 className={`w-full px-4 py-3 text-left hover:bg-gray-100 dark:hover:bg-zinc-700 transition-colors ${
                   pathname === page.path
-                    ? 'bg-blue-50 dark:bg-blue-900/30 font-semibold text-blue-600 dark:text-blue-400'
+                    ? 'bg-blue-100 dark:bg-blue-900/30 font-semibold text-blue-800 dark:text-blue-300'
                     : 'text-black dark:text-white'
                 }`}
               >

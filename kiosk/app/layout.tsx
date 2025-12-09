@@ -38,16 +38,18 @@ export default function RootLayout({
       >
         <ThemeProvider>
           <LanguageProvider>
-            <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-1/2 focus:-translate-x-1/2 focus:z-[100] focus:px-4 focus:py-2 focus:bg-blue-600 focus:text-white focus:rounded">
+            <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-1/2 focus:-translate-x-1/2 focus:z-100 focus:px-4 focus:py-2 focus:bg-blue-600 focus:text-white focus:rounded">
               Skip to main content
             </a>
-            <NavigationMenu />
-            <ThemeToggle />
-            <LanguageToggle />
-            <MagnifierToggle />
-            <div id="main-content">
+            <header role="banner">
+              <NavigationMenu />
+              <ThemeToggle />
+              <LanguageToggle />
+              <MagnifierToggle />
+            </header>
+            <main id="main-content">
               {children}
-            </div>
+            </main>
           </LanguageProvider>
         </ThemeProvider>
       </body>

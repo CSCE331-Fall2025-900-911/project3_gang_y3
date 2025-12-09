@@ -49,7 +49,7 @@ export default function WeatherRecommendation({ menuItems }: RecommendationProps
   }
 
   return (
-    <div className="fixed left-4 bottom-4 w-56 rounded border border-gray-200 dark:border-gray-600 bg-white dark:bg-zinc-800 p-3 shadow-lg text-black dark:text-white transition-colors z-40">
+    <aside className="fixed left-4 bottom-4 w-56 rounded border border-gray-200 dark:border-gray-600 bg-white dark:bg-zinc-800 p-3 shadow-lg text-black dark:text-white transition-colors z-40" aria-label="Weather recommendation">
       <h3 className="text-base font-semibold mb-2">{t('Recommendation')}</h3>
       
       <div className="mb-2">
@@ -64,6 +64,6 @@ export default function WeatherRecommendation({ menuItems }: RecommendationProps
           ${recommendedItem.price.toFixed(2)}
         </div>
       </div>
-    </div>
+    </aside>
   );
 }
