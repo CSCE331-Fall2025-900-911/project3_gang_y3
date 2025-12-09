@@ -2,12 +2,19 @@
 import React, { useState } from 'react';
 import { useLanguage } from './LanguageProvider';
 import { translateMenuItem } from '../lib/translations';
+<<<<<<< Updated upstream
 import { TOPPINGS } from '../lib/toppings';
+=======
+>>>>>>> Stashed changes
 
 type Item = { id: number | null; name: string; price: number };
 type CartItem = Item & { quantity: number; custom?: { temperature: 'hot' | 'cold'; ice: 'low' | 'medium' | 'high'; sugar: 'low' | 'medium' | 'high'; toppings?: number[] } };
 
+<<<<<<< Updated upstream
 export default function Cart({ items, onClear, onRemove, onUpdateQuantity }: { items: CartItem[]; onClear: () => void; onRemove?: (index: number) => void; onUpdateQuantity?: (index: number, delta: number) => void }) {
+=======
+export default function Cart({ items, onClear }: { items: CartItem[]; onClear: () => void }) {
+>>>>>>> Stashed changes
   const { t, language } = useLanguage();
   const [isPlacing, setIsPlacing] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
@@ -43,7 +50,11 @@ export default function Cart({ items, onClear, onRemove, onUpdateQuantity }: { i
       } else {
         setMessage({ type: 'error', text: data.error || t('Failed to place order') });
       }
+<<<<<<< Updated upstream
     } catch {
+=======
+    } catch (error) {
+>>>>>>> Stashed changes
       setMessage({ type: 'error', text: t('Failed to connect to server') });
     } finally {
       setIsPlacing(false);
@@ -69,6 +80,7 @@ export default function Cart({ items, onClear, onRemove, onUpdateQuantity }: { i
                 <div className="text-gray-600 dark:text-gray-300">${((it.price || 0) * it.quantity).toFixed(2)}</div>
               </div>
               <div className="flex items-center justify-between">
+<<<<<<< Updated upstream
                 <div className="flex items-center gap-2">
                   {onUpdateQuantity && (
                     <>
@@ -109,6 +121,13 @@ export default function Cart({ items, onClear, onRemove, onUpdateQuantity }: { i
                     </div>
                   )}
                 </div>
+=======
+                <div className="font-medium">{translateMenuItem(it.name, language)}</div>
+                <div className="text-gray-600 dark:text-gray-300">${(it.price || 0).toFixed(2)}</div>
+              </div>
+              {it.custom && (
+                <div className="text-xs text-zinc-600 dark:text-zinc-400">{t('Ice')}: {t(it.custom.ice)}, {t('Sugar')}: {t(it.custom.sugar)}</div>
+>>>>>>> Stashed changes
               )}
             </div>
           ))
