@@ -1,109 +1,60 @@
-export const translations: Record<string, string> = {
-  "Kiosk — Place an order": "Kiosk — Realizar un pedido",
-  "Kiosk": "Kiosco",
-  "Menu": "Menú",
-  "DATABASE_URL is not set. Add a `DATABASE_URL` variable to `kiosk/.env.local` (eg. postgres://user:pass@host:port/db)": 
-    "DATABASE_URL no está configurado. Agregue una variable `DATABASE_URL` a `kiosk/.env.local` (ej. postgres://user:pass@host:port/db)",
-  "Error querying database:": "Error al consultar la base de datos:",
+// Translation cache to avoid repeated API calls
+const translationCache = new Map<string, string>();
+const pendingTranslations = new Map<string, Promise<string>>();
+
+// Pre-fetch translations in the background
+function preloadTranslation(text: string, targetLang: 'en' | 'es'): void {
+  const cacheKey = `${text}_${targetLang}`;
   
-  "Manager View": "Vista de Gerente",
-  "Back to Kiosk": "Volver al Kiosco",
-  
-  "Cashier View": "Vista de Cajero",
-  
-  "Manager": "Gerente",
-  "Cashier": "Cajero",
-  "Add": "Agregar",
-  "Add to cart": "Agregar al carrito",
-  "Cancel": "Cancelar",
-  "Clear": "Limpiar",
-  "Cart": "Carrito",
-  "Total": "Total",
-  "Place order": "Realizar pedido",
-  "Placing order...": "Realizando pedido...",
-  
-  "Cart is empty": "El carrito está vacío",
-  "Order": "Pedido",
-  "placed successfully!": "realizado con éxito!",
-  "Failed to place order": "No se pudo realizar el pedido",
-  "Failed to connect to server": "No se pudo conectar al servidor",
-  
-  "Recommendation": "Recomendación",
-  "Loading weather...": "Cargando clima...",
-  "Weather unavailable": "Clima no disponible",
-  
-  "Customize:": "Personalizar:",
-  "Ice": "Hielo",
-  "Sugar": "Azúcar",
-  "low": "bajo",
-  "medium": "medio",
-  "high": "alto",
-  
-  "Tea": "Té",
-  "Milk Tea": "Té con Leche",
-  "Fruit Tea": "Té de Frutas",
-  "Coffee": "Café",
-  "Smoothie": "Batido",
-  "Juice": "Jugo",
-  "Water": "Agua",
-  "Soda": "Refresco",
-  
-  "Mango": "Mango",
-  "Strawberry": "Fresa",
-  "Peach": "Durazno",
-  "Lychee": "Lychee",
-  "Passion Fruit": "Maracuyá",
-  "Taro": "Taro",
-  "Matcha": "Matcha",
-  "Chocolate": "Chocolate",
-  "Vanilla": "Vainilla",
-  "Classic": "Clásico",
-  "Original": "Original",
-  "Brown Sugar": "Azúcar Morena",
-  "Honey": "Miel",
-  "Thai": "Tailandés",
-  "Jasmine": "Jazmín",
-  "Green Tea": "Té Verde",
-  "Black Tea": "Té Negro",
-  "Oolong": "Oolong",
-  
-  "Specialty Drinks": "Bebidas Especiales",
-  "Specialty": "Especial",
-  "Snacks": "Bocadillos",
-  "Desserts": "Postres",
-  "Snacks / Desserts": "Bocadillos / Postres",
-  "Snacks/Desserts": "Bocadillos/Postres",
-  "Appetizers": "Aperitivos",
-};
+  if (translationCache.has(cacheKey) || pendingTranslations.has(cacheKey)) {
+    return;
+  }
+
+  const promise = fetch('/api/translate', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ text, targetLang }),
+  })
+    .then(response => {
+      if (!response.ok) {
+        throw new Error('Translation failed');
+      }
+      return response.json();
+    })
+    .then(data => {
+      const translated = data.translatedText || text;
+      translationCache.set(cacheKey, translated);
+      pendingTranslations.delete(cacheKey);
+      return translated;
+    })
+    .catch(error => {
+      console.error('Translation error:', error);
+      pendingTranslations.delete(cacheKey);
+      return text;
+    });
+
+  pendingTranslations.set(cacheKey, promise);
+}
 
 export function translate(text: string, targetLang: 'en' | 'es'): string {
   if (targetLang === 'en') {
     return text;
   }
   
-  return translations[text] || text;
+  const cacheKey = `${text}_${targetLang}`;
+  
+  // Return cached value if available
+  if (translationCache.has(cacheKey)) {
+    return translationCache.get(cacheKey)!;
+  }
+  
+  // Trigger background translation
+  preloadTranslation(text, targetLang);
+  
+  // Return original text while translation loads
+  return text;
 }
 
 export function translateMenuItem(name: string, targetLang: 'en' | 'es'): string {
-  if (targetLang === 'en') {
-    return name;
-  }
-  
-  if (translations[name]) {
-    return translations[name];
-  }
-  
-  const words = name.split(' ');
-  const translatedWords = words.map(word => {
-    if (translations[word]) {
-      return translations[word];
-    }
-    const lowerWord = word.toLowerCase();
-    if (translations[lowerWord]) {
-      return translations[lowerWord].charAt(0).toUpperCase() + translations[lowerWord].slice(1);
-    }
-    return word;
-  });
-  
-  return translatedWords.join(' ');
+  return translate(name, targetLang);
 }
