@@ -5,6 +5,7 @@ const pool = new Pool({
 });
 
 export interface InventoryItem {
+  item_id?: number;
   item_name: string;
   quantity_in_stock: number;
   unit: string;
@@ -29,11 +30,40 @@ export interface RecentOrder {
   total: number;
 }
 
+export interface MenuItem {
+  menu_item_id: number;
+  item_name: string;
+  category: string;
+  price: number;
+  inventory_link: string;
+}
+
+export interface ManagerDataResponse {
+  inventory: InventoryItem[];
+  bestSeller: BestSeller;
+  salesData: SalesData;
+  recentOrders: RecentOrder[];
+  totalOrdersToday: number;
+  lowStockItems: InventoryItem[];
+  menuItems: MenuItem[];
+  categories: string[];
+}
+
 export async function getManagerData() {
   try {
     // Get inventory
     const inventoryResult = await pool.query(
-      'SELECT item_name, quantity_in_stock, unit FROM inventory ORDER BY item_name'
+      'SELECT item_id, item_name, quantity_in_stock, unit FROM inventory ORDER BY item_name'
+    );
+
+    // Get menu items
+    const menuItemsResult = await pool.query(
+      'SELECT menu_item_id, item_name, category, price, inventory_link FROM menu ORDER BY category, item_name'
+    );
+
+    // Get distinct categories for dropdown
+    const distinctCategoriesResult = await pool.query(
+      'SELECT DISTINCT category FROM menu ORDER BY category'
     );
 
     // Get today's sales
@@ -72,30 +102,51 @@ export async function getManagerData() {
       percentage: totalOrders > 0 ? Math.round((parseInt(row.count) / totalOrders) * 100) : 0
     }));
 
-    // Get best seller - just pick a popular item
+    // Get best seller - use a simpler approach with LIKE matching
     const bestSellerResult = await pool.query(
-      `SELECT item_name, menu_item_id as sales
-       FROM menu
-       ORDER BY menu_item_id
+      `SELECT m.item_name, COUNT(*) as sales 
+       FROM orders o
+       JOIN menu m ON o.item_link LIKE '%"' || m.menu_item_id || '":%'
+       WHERE o.order_date = CURRENT_DATE
+         AND o.item_link IS NOT NULL
+         AND LENGTH(o.item_link) > 2
+       GROUP BY m.item_name
+       ORDER BY sales DESC
        LIMIT 1`
     );
 
+    // Get total orders today
+    const totalOrdersResult = await pool.query(
+      `SELECT COUNT(*) as count FROM orders WHERE order_date = CURRENT_DATE`
+    );
+
+    // Get low stock items (less than 20 units)
+    const lowStockResult = await pool.query(
+      `SELECT item_name, quantity_in_stock, unit 
+       FROM inventory 
+       WHERE quantity_in_stock < 20 
+       ORDER BY quantity_in_stock ASC 
+       LIMIT 5`
+    );
+
     // Get recent orders - count commas in item_link for number of items
+    // Use order_id DESC instead of order_time to get truly latest orders
     const ordersResult = await pool.query(
       `SELECT 
         order_id,
         order_date,
-        order_time,
+        order_time AT TIME ZONE 'UTC' AT TIME ZONE 'America/Chicago' as order_time_local,
         total_amount,
         (LENGTH(item_link) - LENGTH(REPLACE(item_link, ',', '')) + 1) as items
        FROM orders
        WHERE order_date = CURRENT_DATE
-       ORDER BY order_time DESC
+       ORDER BY order_id DESC
        LIMIT 10`
     );
 
     const recentOrders = ordersResult.rows.map(row => {
-      const timeParts = row.order_time.split(':');
+      const timeStr = row.order_time_local.toString();
+      const timeParts = timeStr.split(':');
       let hours = parseInt(timeParts[0]);
       const minutes = timeParts[1];
       const ampm = hours >= 12 ? 'PM' : 'AM';
@@ -120,7 +171,11 @@ export async function getManagerData() {
         week: parseFloat(weekResult.rows[0].total),
         topCategories
       } as SalesData,
-      recentOrders: recentOrders as RecentOrder[]
+      recentOrders: recentOrders as RecentOrder[],
+      totalOrdersToday: parseInt(totalOrdersResult.rows[0].count),
+      lowStockItems: lowStockResult.rows as InventoryItem[],
+      menuItems: menuItemsResult.rows as MenuItem[],
+      categories: distinctCategoriesResult.rows.map(r => r.category) as string[]
     };
   } catch (error) {
     console.error('Error fetching manager data:', error);
@@ -128,7 +183,11 @@ export async function getManagerData() {
       inventory: [],
       bestSeller: { name: 'Error loading', sales: 0 },
       salesData: { today: 0, yesterday: 0, week: 0, topCategories: [] },
-      recentOrders: []
+      recentOrders: [],
+      totalOrdersToday: 0,
+      lowStockItems: [],
+      menuItems: [],
+      categories: []
     };
   }
 }

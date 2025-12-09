@@ -57,8 +57,4 @@ export function translate(text: string, targetLang: 'en' | 'es'): string {
 
 export function translateMenuItem(name: string, targetLang: 'en' | 'es'): string {
   return translate(name, targetLang);
-<<<<<<< Updated upstream
 }
-=======
-}
->>>>>>> Stashed changes
