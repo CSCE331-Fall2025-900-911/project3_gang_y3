@@ -11,8 +11,11 @@ export default function ItemCard({ item, onAdd }: { item: Item; onAdd: (it: Item
   return (
 <<<<<<< Updated upstream
     <div className="border border-gray-200 dark:border-gray-600 rounded p-3 flex flex-col bg-white dark:bg-zinc-700 transition-colors hover:shadow-md hover:scale-[1.01]">
+<<<<<<< Updated upstream
 =======
     <div className="border border-gray-200 dark:border-gray-600 rounded p-3 flex flex-col bg-white dark:bg-zinc-700 transition-colors">
+>>>>>>> Stashed changes
+=======
 >>>>>>> Stashed changes
       <div className="font-medium text-black dark:text-white">{translateMenuItem(item.name, language)}</div>
       <div className="text-sm text-gray-600 dark:text-gray-300">{item.category ? t(item.category) : ''}</div>

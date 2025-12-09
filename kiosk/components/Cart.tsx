@@ -3,7 +3,10 @@ import React, { useState } from 'react';
 import { useLanguage } from './LanguageProvider';
 import { translateMenuItem } from '../lib/translations';
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
 import { TOPPINGS } from '../lib/toppings';
+=======
+>>>>>>> Stashed changes
 =======
 >>>>>>> Stashed changes
 
@@ -14,6 +17,9 @@ type CartItem = Item & { quantity: number; custom?: { temperature: 'hot' | 'cold
 export default function Cart({ items, onClear, onRemove, onUpdateQuantity }: { items: CartItem[]; onClear: () => void; onRemove?: (index: number) => void; onUpdateQuantity?: (index: number, delta: number) => void }) {
 =======
 export default function Cart({ items, onClear }: { items: CartItem[]; onClear: () => void }) {
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
 >>>>>>> Stashed changes
   const { t, language } = useLanguage();
   const [isPlacing, setIsPlacing] = useState(false);
@@ -54,6 +60,9 @@ export default function Cart({ items, onClear }: { items: CartItem[]; onClear: (
     } catch {
 =======
     } catch (error) {
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
 >>>>>>> Stashed changes
       setMessage({ type: 'error', text: t('Failed to connect to server') });
     } finally {
@@ -80,6 +89,7 @@ export default function Cart({ items, onClear }: { items: CartItem[]; onClear: (
                 <div className="text-gray-600 dark:text-gray-300">${((it.price || 0) * it.quantity).toFixed(2)}</div>
               </div>
               <div className="flex items-center justify-between">
+<<<<<<< Updated upstream
 <<<<<<< Updated upstream
                 <div className="flex items-center gap-2">
                   {onUpdateQuantity && (
@@ -122,11 +132,16 @@ export default function Cart({ items, onClear }: { items: CartItem[]; onClear: (
                   )}
                 </div>
 =======
+=======
+>>>>>>> Stashed changes
                 <div className="font-medium">{translateMenuItem(it.name, language)}</div>
                 <div className="text-gray-600 dark:text-gray-300">${(it.price || 0).toFixed(2)}</div>
               </div>
               {it.custom && (
                 <div className="text-xs text-zinc-600 dark:text-zinc-400">{t('Ice')}: {t(it.custom.ice)}, {t('Sugar')}: {t(it.custom.sugar)}</div>
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
 >>>>>>> Stashed changes
               )}
             </div>
