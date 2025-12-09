@@ -29,20 +29,23 @@ export default function NavigationMenu() {
 
   return (
     <>
-      <div className="fixed top-4 left-4 z-50">
+      <nav className="fixed top-4 left-4 z-50" aria-label="Main navigation">
         <button
           onClick={() => setIsOpen(!isOpen)}
-          className="px-4 py-2 rounded bg-gray-700 hover:bg-gray-600 text-white font-medium shadow-lg transition-colors"
+          className="px-4 py-2 rounded bg-gray-800 hover:bg-gray-700 text-white font-medium shadow-lg transition-colors"
+          aria-expanded={isOpen}
+          aria-haspopup="true"
         >
           ☰ {t('Menu')}
         </button>
 
         {isOpen && (
-          <div className="absolute top-full left-0 mt-2 w-48 bg-white dark:bg-zinc-800 border border-gray-200 dark:border-gray-600 rounded shadow-lg overflow-hidden">
+          <div className="absolute top-full left-0 mt-2 w-48 bg-white dark:bg-zinc-800 border border-gray-200 dark:border-gray-600 rounded shadow-lg overflow-hidden" role="menu">
             {pages.map((page) => (
               <button
                 key={page.path}
                 onClick={() => handleNavigate(page.path, page.label, page.requiresAuth)}
+                role="menuitem"
                 className={`w-full px-4 py-3 text-left hover:bg-gray-100 dark:hover:bg-zinc-700 transition-colors ${
                   pathname === page.path
                     ? 'bg-blue-50 dark:bg-blue-900/30 font-semibold text-blue-600 dark:text-blue-400'
@@ -54,7 +57,7 @@ export default function NavigationMenu() {
             ))}
           </div>
         )}
-      </div>
+      </nav>
 
       {showLogin && (
         <LoginModal
