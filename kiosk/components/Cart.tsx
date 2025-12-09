@@ -10,18 +10,18 @@ export default function Cart({ items, onClear, onRemove }: { items: CartItem[]; 
   const { t, language } = useLanguage();
   const [isPlacing, setIsPlacing] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
-  
+
   const total = items.reduce((s, i) => s + (i.price || 0), 0);
-  
+
   const placeOrder = async () => {
     if (items.length === 0) {
       setMessage({ type: 'error', text: t('Cart is empty') });
       return;
     }
-    
+
     setIsPlacing(true);
     setMessage(null);
-    
+
     try {
       const response = await fetch('/api/orders', {
         method: 'POST',
@@ -30,9 +30,9 @@ export default function Cart({ items, onClear, onRemove }: { items: CartItem[]; 
         },
         body: JSON.stringify({ items }),
       });
-      
+
       const data = await response.json();
-      
+
       if (data.success) {
         setMessage({ type: 'success', text: `${t('Order')} #${data.orderId} ${t('placed successfully!')}` });
         setTimeout(() => {
@@ -48,7 +48,7 @@ export default function Cart({ items, onClear, onRemove }: { items: CartItem[]; 
       setIsPlacing(false);
     }
   };
-  
+
   return (
     <div className="fixed right-6 bottom-6 w-80 rounded-lg border border-gray-200 dark:border-gray-600 bg-gradient-to-br from-white to-gray-50 dark:from-zinc-800 dark:to-zinc-900 p-5 shadow-2xl text-black dark:text-white transition-all">
       <div className="flex items-center justify-between mb-4 pb-3 border-b border-gray-200 dark:border-gray-600">
@@ -87,19 +87,18 @@ export default function Cart({ items, onClear, onRemove }: { items: CartItem[]; 
         <div className="font-semibold">{t('Total')}</div>
         <div className="font-semibold">${total.toFixed(2)}</div>
       </div>
-      
+
       {message && (
-        <div className={`mt-3 p-2 rounded text-sm ${
-          message.type === 'success' 
-            ? 'bg-green-50 text-green-800 border border-green-200' 
+        <div className={`mt-3 p-2 rounded text-sm ${message.type === 'success'
+            ? 'bg-green-50 text-green-800 border border-green-200'
             : 'bg-red-50 text-red-800 border border-red-200'
-        }`}>
+          }`}>
           {message.text}
         </div>
       )}
-      
+
       <div className="mt-3">
-        <button 
+        <button
           className="w-full rounded bg-black dark:bg-white text-white dark:text-black py-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           onClick={placeOrder}
           disabled={isPlacing || items.length === 0}
