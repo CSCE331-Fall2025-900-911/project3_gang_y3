@@ -29,12 +29,13 @@ export default function MenuGrid({ items }: { items: Item[] }) {
       setCustomizing(it);
       setIce('medium');
       setSugar('medium');
-    } else {
-      const newItem: CartItem = { ...it };
-      setCart((s) => [...s, newItem]);
-      setAddedMessage(`${it.name} added to cart!`);
-      setTimeout(() => setAddedMessage(null), 1500);
+      return;
     }
+
+    const newItem: CartItem = { ...it };
+    setCart((s) => [...s, newItem]);
+    setAddedMessage(`${it.name} added to cart!`);
+    setTimeout(() => setAddedMessage(null), 1500);
   }
 
   function confirmAdd() {
@@ -66,7 +67,11 @@ export default function MenuGrid({ items }: { items: Item[] }) {
             <h2 className="text-xl font-semibold mb-3 text-black dark:text-white">{category}</h2>
             <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
               {list.map((it, idx) => (
-                <ItemCard key={it.id ?? `${it.name ?? 'item'}-${idx}`} item={it} onAdd={requestAdd} />
+                <ItemCard 
+                  key={it.id ?? `${it.name}-${idx}`} 
+                  item={it} 
+                  onAdd={requestAdd} 
+                />
               ))}
             </div>
           </div>
@@ -77,7 +82,8 @@ export default function MenuGrid({ items }: { items: Item[] }) {
 
       {customizing && (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
-          <div className="absolute inset-0 bg-black/40 dark:bg-black/60" onClick={cancelAdd}></div>
+          <div className="absolute inset-0 bg-black/40 dark:bg-black/60" onClick={cancelAdd} />
+
           <div className="relative z-10 w-[90%] max-w-md rounded bg-white dark:bg-zinc-800 p-6 shadow-lg text-black dark:text-white transition-colors">
             <h3 className="text-lg font-semibold mb-3">Customize: {customizing.name}</h3>
 
@@ -86,7 +92,13 @@ export default function MenuGrid({ items }: { items: Item[] }) {
               <div className="flex gap-3">
                 {(['low', 'medium', 'high'] as const).map((lvl) => (
                   <label key={lvl} className="flex items-center gap-2">
-                    <input type="radio" name="ice" value={lvl} checked={ice === lvl} onChange={() => setIce(lvl)} />
+                    <input 
+                      type="radio" 
+                      name="ice" 
+                      value={lvl}
+                      checked={ice === lvl}
+                      onChange={() => setIce(lvl)}
+                    />
                     <span className="capitalize">{lvl}</span>
                   </label>
                 ))}
@@ -98,7 +110,13 @@ export default function MenuGrid({ items }: { items: Item[] }) {
               <div className="flex gap-3">
                 {(['low', 'medium', 'high'] as const).map((lvl) => (
                   <label key={lvl} className="flex items-center gap-2">
-                    <input type="radio" name="sugar" value={lvl} checked={sugar === lvl} onChange={() => setSugar(lvl)} />
+                    <input 
+                      type="radio" 
+                      name="sugar" 
+                      value={lvl}
+                      checked={sugar === lvl}
+                      onChange={() => setSugar(lvl)}
+                    />
                     <span className="capitalize">{lvl}</span>
                   </label>
                 ))}
@@ -106,10 +124,17 @@ export default function MenuGrid({ items }: { items: Item[] }) {
             </div>
 
             <div className="flex justify-end gap-3 mt-4">
-              <button className="px-3 py-1 rounded border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors" onClick={cancelAdd}>
+              <button 
+                className="px-3 py-1 rounded border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                onClick={cancelAdd}
+              >
                 Cancel
               </button>
-              <button className="px-3 py-1 rounded bg-black dark:bg-white text-white dark:text-black hover:opacity-90 transition-colors" onClick={confirmAdd}>
+
+              <button 
+                className="px-3 py-1 rounded bg-black dark:bg-white text-white dark:text-black hover:opacity-90 transition-colors"
+                onClick={confirmAdd}
+              >
                 Add to cart
               </button>
             </div>
@@ -118,10 +143,11 @@ export default function MenuGrid({ items }: { items: Item[] }) {
       )}
 
       {addedMessage && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 bg-black text-white dark:bg-white dark:text-black px-4 py-2 rounded shadow-lg animate-fadeSlideIn z-50">
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 bg-black text-white dark:bg-white dark:text-black px-4 py-2 rounded shadow-lg z-50">
           {addedMessage}
         </div>
       )}
     </div>
   );
 }
+
