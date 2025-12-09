@@ -11,28 +11,77 @@ export default function MagnifierToggle() {
 
   useEffect(() => {
     if (!isActive) {
-      document.body.style.transform = '';
-      document.body.style.transformOrigin = '';
-      document.body.style.transition = '';
+      const lens = document.getElementById('magnifier-lens');
+      if (lens) lens.style.display = 'none';
       return;
     }
 
+    // Create magnifier lens if it doesn't exist
+    let lens = document.getElementById('magnifier-lens') as HTMLDivElement;
+    if (!lens) {
+      lens = document.createElement('div');
+      lens.id = 'magnifier-lens';
+      lens.style.cssText = `
+        position: fixed;
+        width: 150px;
+        height: 150px;
+        border: 3px solid #3b82f6;
+        border-radius: 50%;
+        pointer-events: none;
+        z-index: 9999;
+        display: none;
+        box-shadow: 0 0 20px rgba(0,0,0,0.3);
+        backdrop-filter: blur(0px);
+        overflow: hidden;
+      `;
+      document.body.appendChild(lens);
+
+      const zoomedContent = document.createElement('div');
+      zoomedContent.id = 'magnifier-content';
+      zoomedContent.style.cssText = `
+        position: absolute;
+        transform-origin: top left;
+        pointer-events: none;
+      `;
+      lens.appendChild(zoomedContent);
+    }
+
     const handleMouseMove = (e: MouseEvent) => {
-      const x = e.clientX;
-      const y = e.clientY;
+      const lens = document.getElementById('magnifier-lens') as HTMLDivElement;
+      const content = document.getElementById('magnifier-content') as HTMLDivElement;
+      if (!lens || !content) return;
+
+      const lensRadius = 75; // Half of 150px
+      const zoomLevel = 2;
+
+      lens.style.display = 'block';
+      lens.style.left = `${e.clientX - lensRadius}px`;
+      lens.style.top = `${e.clientY - lensRadius}px`;
+
+      // Clone the body content into the lens
+      const bodyClone = document.body.cloneNode(true) as HTMLElement;
       
-      document.body.style.transform = `scale(2)`;
-      document.body.style.transformOrigin = `${x}px ${y}px`;
-      document.body.style.transition = 'transform 0.1s ease-out';
+      // Remove the lens itself from the clone to avoid recursion
+      const clonedLens = bodyClone.querySelector('#magnifier-lens');
+      if (clonedLens) clonedLens.remove();
+
+      content.innerHTML = '';
+      content.appendChild(bodyClone);
+
+      // Position and scale the content
+      content.style.transform = `scale(${zoomLevel})`;
+      content.style.left = `${-e.clientX * zoomLevel + lensRadius}px`;
+      content.style.top = `${-e.clientY * zoomLevel + lensRadius}px`;
+      content.style.width = `${window.innerWidth}px`;
+      content.style.height = `${window.innerHeight}px`;
     };
 
     window.addEventListener('mousemove', handleMouseMove);
 
     return () => {
       window.removeEventListener('mousemove', handleMouseMove);
-      document.body.style.transform = '';
-      document.body.style.transformOrigin = '';
-      document.body.style.transition = '';
+      const lens = document.getElementById('magnifier-lens');
+      if (lens) lens.style.display = 'none';
     };
   }, [isActive]);
 
