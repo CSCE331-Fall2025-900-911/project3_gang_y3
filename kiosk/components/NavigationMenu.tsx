@@ -35,11 +35,10 @@ export default function NavigationMenu() {
             <button
               key={page.path}
               onClick={() => handleNavigate(page.path)}
-              className={`w-full px-5 py-3 text-left font-medium transition-all ${
-                pathname === page.path
+              className={`w-full px-5 py-3 text-left font-medium transition-all ${pathname === page.path
                   ? 'bg-gradient-to-r from-indigo-50 to-blue-50 dark:from-indigo-900/40 dark:to-blue-900/40 text-indigo-700 dark:text-indigo-300 border-l-4 border-indigo-600'
                   : 'text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-zinc-700/50'
-              }`}
+                }`}
             >
               {t(page.label)}
             </button>
