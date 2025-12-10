@@ -1,8 +1,10 @@
-import { Pool } from 'pg';
-
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-});
+import { pool } from './db';
+// Reset X/Z report counters in the database
+export async function resetReports() {
+  // Example: Reset inventory update and out-of-stock counters
+  // You may need to adjust table/column names to match your schema
+  await pool.query('UPDATE report_counters SET out_of_stock_count = 0, x_report_hourly_sales = 0, x_report_returns = 0, x_report_voids = 0, x_report_discards = 0, x_report_payment_methods = \'{}\';');
+}
 
 export interface InventoryItem {
   item_id?: number;
@@ -21,6 +23,14 @@ export interface SalesData {
   yesterday: number;
   week: number;
   topCategories: { name: string; percentage: number }[];
+  hourly: Array<{
+    hour: number;
+    sales: number;
+    returns: number;
+    voids: number;
+    discards: number;
+    paymentMethods: string[];
+  }>;
 }
 
 export interface RecentOrder {
@@ -31,11 +41,12 @@ export interface RecentOrder {
 }
 
 export interface MenuItem {
-  menu_item_id: number;
-  item_name: string;
-  category: string;
-  price: number;
-  inventory_link: string;
+    menu_item_id: number;
+    item_name: string;
+    category: string;
+    price: number;
+    inventory_link: string;
+    availability?: boolean;
 }
 
 export interface ManagerDataResponse {
@@ -50,6 +61,28 @@ export interface ManagerDataResponse {
 }
 
 export async function getManagerData() {
+      // Get hourly sales, returns, voids, discards, payment methods for today (8am-8pm)
+      const hourly: Array<{ hour: number; sales: number; returns: number; voids: number; discards: number; paymentMethods: string[] }> = [];
+      for (let h = 8; h <= 20; h++) {
+        const start = h.toString().padStart(2, '0') + ':00:00';
+        const end = h.toString().padStart(2, '0') + ':59:59';
+        // Sales
+        const salesRes = await pool.query(`SELECT COUNT(*) FROM orders WHERE order_date = CURRENT_DATE AND order_time BETWEEN $1 AND $2`, [start, end]);
+        // Returns, Voids, Discards (assuming order_status field)
+        const returnsRes = await pool.query(`SELECT COUNT(*) FROM orders WHERE order_date = CURRENT_DATE AND order_time BETWEEN $1 AND $2 AND order_status = 'Returned'`, [start, end]);
+        const voidsRes = await pool.query(`SELECT COUNT(*) FROM orders WHERE order_date = CURRENT_DATE AND order_time BETWEEN $1 AND $2 AND order_status = 'Voided'`, [start, end]);
+        const discardsRes = await pool.query(`SELECT COUNT(*) FROM orders WHERE order_date = CURRENT_DATE AND order_time BETWEEN $1 AND $2 AND order_status = 'Discarded'`, [start, end]);
+        // Payment methods
+        const paymentRes = await pool.query(`SELECT DISTINCT payment_method FROM orders WHERE order_date = CURRENT_DATE AND order_time BETWEEN $1 AND $2`, [start, end]);
+        hourly.push({
+          hour: h,
+          sales: parseInt(salesRes.rows[0].count),
+          returns: parseInt(returnsRes.rows[0].count),
+          voids: parseInt(voidsRes.rows[0].count),
+          discards: parseInt(discardsRes.rows[0].count),
+          paymentMethods: paymentRes.rows.map(r => r.payment_method)
+        });
+      }
   try {
     // Get inventory
     const inventoryResult = await pool.query(
@@ -171,7 +204,8 @@ export async function getManagerData() {
         today: parseFloat(todayResult.rows[0].total),
         yesterday: parseFloat(yesterdayResult.rows[0].total),
         week: parseFloat(weekResult.rows[0].total),
-        topCategories
+        topCategories,
+        hourly
       } as SalesData,
       recentOrders: recentOrders as RecentOrder[],
       totalOrdersToday: parseInt(totalOrdersResult.rows[0].count),

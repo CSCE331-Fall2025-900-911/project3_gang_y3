@@ -21,6 +21,62 @@ interface ManagerClientProps {
 }
 
 export default function ManagerClient({ initialData }: ManagerClientProps) {
+          // State for Product Usage Chart
+          const [usageStart, setUsageStart] = useState('');
+          const [usageEnd, setUsageEnd] = useState('');
+          const [usageData, setUsageData] = useState<Array<{ item_name: string; used: number; unit: string }>>([]);
+          const [loadingUsage, setLoadingUsage] = useState(false);
+
+          const fetchUsageData = async () => {
+            setLoadingUsage(true);
+            const res = await fetch(`/api/manager/inventory-usage?start=${usageStart}&end=${usageEnd}`);
+            if (res.ok) {
+              const data = await res.json();
+              setUsageData(data.usage || []);
+            }
+            setLoadingUsage(false);
+          };
+        // Add X-Report counters state if not present
+        const [xReportCounters, setXReportCounters] = useState({
+          hourlySales: 0,
+          returns: 0,
+          voids: 0,
+          discards: 0,
+          paymentMethods: {},
+        });
+      const [showZReportModal, setShowZReportModal] = useState(false);
+
+      // Reset counters
+      const handleRunZReport = () => {
+        setShowZReportModal(true);
+      };
+      const handleConfirmZReport = () => {
+        setInventoryUpdateCount(0);
+        setXReportCounters({
+          hourlySales: 0,
+          returns: 0,
+          voids: 0,
+          discards: 0,
+          paymentMethods: {},
+        });
+        setShowZReportModal(false);
+        // Call backend API to reset counters
+        fetch('/api/manager/reset-reports', {
+          method: 'POST',
+        });
+      };
+    // Track inventory updates (demo: in-memory, reset on reload)
+    const [inventoryUpdateCount, setInventoryUpdateCount] = useState(0);
+
+    // Red threshold for inventory (e.g., <10 units)
+    const RED_THRESHOLD = 10;
+    const redThresholdCount = initialData.inventory.filter(item => item.quantity_in_stock < RED_THRESHOLD).length;
+
+    // Wrap inventory update handler to increment count
+    const handleUpdateInventoryTracked = async () => {
+      await handleUpdateInventory();
+      setInventoryUpdateCount(c => c + 1);
+    };
   const router = useRouter();
   const { t } = useLanguage();
   const { role, isLoading } = useAuth();
@@ -180,7 +236,128 @@ export default function ManagerClient({ initialData }: ManagerClientProps) {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-            <div className="bg-white dark:bg-zinc-800 p-6 rounded shadow">
+                                {/* Product Usage Chart Widget */}
+                                <div className="bg-white dark:bg-zinc-800 p-6 rounded shadow flex flex-col gap-4" style={{ minHeight: '400px' }}>
+                                  <h2 className="text-xl font-semibold mb-2">Product Usage Chart</h2>
+                                  <div className="mb-1 text-sm text-gray-600 dark:text-gray-300">Select a time window to view inventory usage.</div>
+                                  <div className="flex flex-col gap-2 mb-2 w-full max-w-xs">
+                                    <label className="text-xs font-medium">Start Date & Time</label>
+                                    <input type="datetime-local" value={usageStart} onChange={e => setUsageStart(e.target.value)} className="px-2 py-1 rounded border w-full" />
+                                    <label className="text-xs font-medium">End Date & Time</label>
+                                    <input type="datetime-local" value={usageEnd} onChange={e => setUsageEnd(e.target.value)} className="px-2 py-1 rounded border w-full" />
+                                    <button className="mt-2 px-3 py-2 rounded bg-blue-500 hover:bg-blue-600 text-white font-semibold transition-colors" onClick={fetchUsageData} disabled={loadingUsage || !usageStart || !usageEnd}>Generate Usage Table</button>
+                                  </div>
+                                  {loadingUsage ? (
+                                    <div className="text-center py-8">Loading...</div>
+                                  ) : usageData.length > 0 ? (
+                                    <div className="overflow-y-auto max-h-56 border rounded">
+                                      <table className="w-full text-sm">
+                                        <thead className="sticky top-0 bg-gray-100 dark:bg-zinc-700">
+                                          <tr>
+                                            <th className="p-2 text-left">Inventory Item</th>
+                                            <th className="p-2 text-left">Amount Used</th>
+                                            <th className="p-2 text-left">Unit</th>
+                                          </tr>
+                                        </thead>
+                                        <tbody>
+                                          {usageData.map((row, idx) => (
+                                            <tr key={idx}>
+                                              <td className="p-2">{row.item_name}</td>
+                                              <td className="p-2">{row.used}</td>
+                                              <td className="p-2">{row.unit}</td>
+                                            </tr>
+                                          ))}
+                                        </tbody>
+                                      </table>
+                                    </div>
+                                  ) : (
+                                    <div className="text-center py-8 text-gray-500">No usage data for selected period.</div>
+                                  )}
+                                </div>
+                        {/* X-Report Widget */}
+                        <div className="bg-white dark:bg-zinc-800 p-6 rounded shadow">
+                          <h2 className="text-xl font-semibold mb-4">X-Report</h2>
+                          <div className="mb-2 text-sm text-gray-600 dark:text-gray-300">Sales activities per hour for today</div>
+                          <div className="overflow-x-auto">
+                            <table className="min-w-[900px] text-sm mb-2 border border-gray-200 dark:border-gray-700 rounded">
+                              <thead>
+                                <tr className="bg-gray-100 dark:bg-zinc-700">
+                                  <th className="p-2 text-left">Hour</th>
+                                  <th className="p-2 text-left">Sales</th>
+                                  <th className="p-2 text-left">Returns</th>
+                                  <th className="p-2 text-left">Voids</th>
+                                  <th className="p-2 text-left">Discards</th>
+                                  <th className="p-2 text-left">Payment Methods</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {salesData?.hourly?.map((row) => {
+                                  const hour = row.hour;
+                                  const ampm = hour < 12 ? 'am' : 'pm';
+                                  const displayHour = hour === 12 ? '12pm' : hour > 12 ? `${hour-12}pm` : `${hour}${ampm}`;
+                                  return (
+                                    <tr key={hour}>
+                                      <td className="p-2">{displayHour}</td>
+                                      <td className="p-2">{row.sales}</td>
+                                      <td className="p-2">{row.returns}</td>
+                                      <td className="p-2">{row.voids}</td>
+                                      <td className="p-2">{row.discards}</td>
+                                      <td className="p-2">{row.paymentMethods.length > 0 ? row.paymentMethods.join(', ') : '—'}</td>
+                                    </tr>
+                                  );
+                                })}
+                              </tbody>
+                            </table>
+                          </div>
+                        </div>
+
+                        {/* Z-Report Widget */}
+                        <div className="bg-white dark:bg-zinc-800 p-6 rounded shadow" style={{ minHeight: '400px' }}>
+                          <h2 className="text-xl font-semibold mb-4">Z-Report</h2>
+                          <div className="mb-2 text-sm text-gray-600 dark:text-gray-300">End-of-day totals and reset</div>
+                          <div className="space-y-2">
+                            <div className="flex justify-between"><span>Sales</span><span>${salesData?.today.toFixed(2)}</span></div>
+                            <div className="flex justify-between"><span>Tax</span><span>$0.00</span></div>
+                            <div className="flex justify-between"><span>Payment Methods</span><span>Cash, Card</span></div>
+                            <div className="flex justify-between"><span>Total Cash</span><span>${salesData?.today.toFixed(2)}</span></div>
+                            <div className="flex justify-between"><span>Out of Stock Items</span><span>{menuItems.filter(item => item.availability === false).length}</span></div>
+                            <div className="flex justify-between"><span>Items in Red Threshold</span><span>{redThresholdCount}</span></div>
+                          </div>
+                          <button className="mt-4 px-4 py-2 rounded bg-red-500 text-white font-semibold" onClick={handleRunZReport}>
+                            Run Z-Report (Once per day)
+                          </button>
+                                        {showZReportModal && (
+                                          <div className="fixed inset-0 z-50 flex items-center justify-center">
+                                            <div className="absolute inset-0 bg-black/40 dark:bg-black/60" onClick={() => setShowZReportModal(false)}></div>
+                                            <div className="relative z-10 w-[90%] max-w-lg rounded bg-white dark:bg-zinc-800 p-6 shadow-lg text-black dark:text-white transition-colors">
+                                              <h3 className="text-lg font-semibold mb-3">Z-Report Summary</h3>
+                                              <div className="space-y-2">
+                                                <div className="flex justify-between"><span>Sales</span><span>${salesData?.today.toFixed(2)}</span></div>
+                                                <div className="flex justify-between"><span>Tax</span><span>$0.00</span></div>
+                                                <div className="flex justify-between"><span>Payment Methods</span><span>Cash, Card</span></div>
+                                                <div className="flex justify-between"><span>Total Cash</span><span>${salesData?.today.toFixed(2)}</span></div>
+                                                <div className="flex justify-between"><span>Out of Stock Items</span><span>{menuItems.filter(item => item.availability === false).length}</span></div>
+                                                <div className="flex justify-between"><span>Items in Red Threshold</span><span>{redThresholdCount}</span></div>
+                                                <div className="flex flex-col mt-4">
+                                                  <span className="font-medium mb-1">Low Stock Items:</span>
+                                                  {lowStockItems.length > 0 ? (
+                                                    lowStockItems.map((item, idx) => (
+                                                      <span key={idx}>{item.item_name}: {item.quantity_in_stock} {item.unit}</span>
+                                                    ))
+                                                  ) : (
+                                                    <span>None</span>
+                                                  )}
+                                                </div>
+                                              </div>
+                                              <div className="flex justify-end mt-6 gap-2">
+                                                <button className="px-4 py-2 rounded bg-gray-300 dark:bg-zinc-700 text-black dark:text-white font-semibold" onClick={() => setShowZReportModal(false)}>Cancel</button>
+                                                <button className="px-4 py-2 rounded bg-red-500 text-white font-semibold" onClick={handleConfirmZReport}>Confirm & Reset</button>
+                                              </div>
+                                            </div>
+                                          </div>
+                                        )}
+                        </div>
+            <div className="bg-white dark:bg-zinc-800 p-6 rounded shadow" style={{ minHeight: '400px' }}>
               <h2 className="text-xl font-semibold mb-4">{t("Current Inventory")}</h2>
               <div className="space-y-3 max-h-96 overflow-y-auto">
                 {inventory.map((item, idx) => (
@@ -255,7 +432,7 @@ export default function ManagerClient({ initialData }: ManagerClientProps) {
 
             <div className="bg-white dark:bg-zinc-800 p-6 rounded shadow lg:col-span-2 xl:col-span-1">
               <h2 className="text-xl font-semibold mb-4">{t("Recent Orders")}</h2>
-              <div className="space-y-3">
+              <div className="space-y-3 max-h-80 overflow-y-auto">
                 {recentOrders.length > 0 ? (
                   recentOrders.map((order) => (
                     <div
