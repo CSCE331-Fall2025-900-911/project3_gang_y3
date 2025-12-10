@@ -7,6 +7,7 @@ import Cart from '../../components/Cart';
 import { useLanguage } from '../../components/LanguageProvider';
 import { translateMenuItem } from '../../lib/translations';
 import { TOPPINGS } from '../../lib/toppings';
+import { useAuth } from '../../lib/useAuth';
 
 type MenuItem = { id: number | null; name: string; price: number; category?: string | null };
 type CartItem = MenuItem & { quantity: number; custom?: { temperature: 'hot' | 'cold'; ice: 'low' | 'medium' | 'high'; sugar: 'low' | 'medium' | 'high'; toppings?: number[] } };
@@ -18,6 +19,7 @@ interface CashierClientProps {
 export default function CashierClient({ menuItems }: CashierClientProps) {
   const { t, language } = useLanguage();
   const router = useRouter();
+  const { role, isLoading } = useAuth();
   const [cart, setCart] = useState<CartItem[]>([]);
   const [customizing, setCustomizing] = useState<MenuItem | null>(null);
   const [quantity, setQuantity] = useState(1);
@@ -27,11 +29,10 @@ export default function CashierClient({ menuItems }: CashierClientProps) {
   const [selectedToppings, setSelectedToppings] = useState<number[]>([]);
 
   useEffect(() => {
-    const userRole = sessionStorage.getItem('userRole');
-    if (userRole !== 'Cashier') {
+    if (!isLoading && role !== 'Cashier') {
       router.push('/');
     }
-  }, [router]);
+  }, [role, isLoading, router]);
 
   const handleSignOut = () => {
     sessionStorage.removeItem('userRole');

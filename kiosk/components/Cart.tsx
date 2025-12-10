@@ -11,6 +11,9 @@ export default function Cart({ items, onClear, onRemove, onUpdateQuantity }: { i
   const { t, language } = useLanguage();
   const [isPlacing, setIsPlacing] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [showEmailPopup, setShowEmailPopup] = useState(false);
+  const [customerEmail, setCustomerEmail] = useState('');
+  const [pendingOrderId, setPendingOrderId] = useState<number | null>(null);
   
   const total = items.reduce((s, i) => s + (i.price || 0) * i.quantity, 0);
   
@@ -35,11 +38,8 @@ export default function Cart({ items, onClear, onRemove, onUpdateQuantity }: { i
       const data = await response.json();
       
       if (data.success) {
-        setMessage({ type: 'success', text: `${t('Order')} #${data.orderId} ${t('placed successfully!')}` });
-        setTimeout(() => {
-          onClear();
-          setMessage(null);
-        }, 2000);
+        setPendingOrderId(data.orderId);
+        setShowEmailPopup(true);
       } else {
         setMessage({ type: 'error', text: data.error || t('Failed to place order') });
       }
@@ -48,6 +48,53 @@ export default function Cart({ items, onClear, onRemove, onUpdateQuantity }: { i
     } finally {
       setIsPlacing(false);
     }
+  };
+
+  const handleEmailSubmit = async () => {
+    try {
+      // Send receipt via API
+      const response = await fetch('/api/send-receipt', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: customerEmail,
+          orderId: pendingOrderId,
+          items: items,
+          total: total
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        setMessage({ type: 'success', text: `${t('Order')} #${pendingOrderId} ${t('placed successfully!')} ${t('Receipt sent to')} ${customerEmail}` });
+      } else {
+        setMessage({ type: 'success', text: `${t('Order')} #${pendingOrderId} ${t('placed successfully!')} (${t('Failed to send receipt')})` });
+      }
+    } catch {
+      setMessage({ type: 'success', text: `${t('Order')} #${pendingOrderId} ${t('placed successfully!')} (${t('Failed to send receipt')})` });
+    }
+
+    setShowEmailPopup(false);
+    setCustomerEmail('');
+    setPendingOrderId(null);
+    
+    setTimeout(() => {
+      onClear();
+      setMessage(null);
+    }, 3000);
+  };
+
+  const handleSkipEmail = () => {
+    setMessage({ type: 'success', text: `${t('Order')} #${pendingOrderId} ${t('placed successfully!')}` });
+    setShowEmailPopup(false);
+    setCustomerEmail('');
+    setPendingOrderId(null);
+    
+    setTimeout(() => {
+      onClear();
+      setMessage(null);
+    }, 2000);
   };
   
   return (
@@ -138,6 +185,53 @@ export default function Cart({ items, onClear, onRemove, onUpdateQuantity }: { i
           {isPlacing ? t('Placing order...') : t('Place order')}
         </button>
       </div>
+
+      {/* Email Receipt Popup */}
+      {showEmailPopup && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div className="absolute inset-0 bg-black/50" onClick={handleSkipEmail}></div>
+          <div className="relative z-10 w-[90%] max-w-md rounded-lg bg-white dark:bg-zinc-800 p-6 shadow-xl text-black dark:text-white">
+            <div className="text-center mb-4">
+              <div className="w-16 h-16 mx-auto mb-3 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
+                <svg className="w-8 h-8 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+              </div>
+              <h2 className="text-xl font-bold">{t('Order')} #{pendingOrderId}</h2>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{t('Your order has been placed!')}</p>
+            </div>
+
+            <div className="mb-4">
+              <label className="block text-sm font-medium mb-2">
+                {t('Would you like an itemized receipt?')}
+              </label>
+              <input
+                type="email"
+                value={customerEmail}
+                onChange={(e) => setCustomerEmail(e.target.value)}
+                placeholder={t('Enter your email address')}
+                className="w-full px-4 py-2 border border-gray-300 dark:border-zinc-600 rounded bg-white dark:bg-zinc-700 text-black dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                onClick={handleSkipEmail}
+                className="flex-1 px-4 py-2 border border-gray-300 dark:border-zinc-600 rounded hover:bg-gray-50 dark:hover:bg-zinc-700 transition-colors"
+              >
+                {t('No thanks')}
+              </button>
+              <button
+                onClick={handleEmailSubmit}
+                disabled={!customerEmail || !customerEmail.includes('@')}
+                className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-medium rounded transition-colors disabled:cursor-not-allowed"
+              >
+                {t('Send Receipt')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

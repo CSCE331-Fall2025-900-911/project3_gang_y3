@@ -3,6 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from "next/image";
 import { useLanguage } from '../../components/LanguageProvider';
+import { useAuth } from '../../lib/useAuth';
 import type { InventoryItem, BestSeller, SalesData, RecentOrder, MenuItem } from '../../lib/managerData';
 
 interface ManagerClientProps {
@@ -21,6 +22,7 @@ interface ManagerClientProps {
 export default function ManagerClient({ initialData }: ManagerClientProps) {
   const router = useRouter();
   const { t } = useLanguage();
+  const { role, isLoading } = useAuth();
   const { inventory, bestSeller, salesData, recentOrders, totalOrdersToday, lowStockItems, menuItems, categories } = initialData;
 
   // State for editing menu
@@ -46,11 +48,10 @@ export default function ManagerClient({ initialData }: ManagerClientProps) {
   const [newInventoryUnit, setNewInventoryUnit] = useState('');
 
   useEffect(() => {
-    const userRole = sessionStorage.getItem('userRole');
-    if (userRole !== 'Manager') {
+    if (!isLoading && role !== 'Manager') {
       router.push('/');
     }
-  }, [router]);
+  }, [role, isLoading, router]);
 
   const handleSignOut = () => {
     sessionStorage.removeItem('userRole');
