@@ -7,13 +7,17 @@ import { useLanguage } from './LanguageProvider';
 import { translateMenuItem } from '../lib/translations';
 
 export type Item = { id: number | null; name: string; price: number; category?: string | null };
-type CartItem = Item & { quantity: number; custom?: { temperature: 'hot' | 'cold'; ice: 'low' | 'medium' | 'high'; sugar: 'low' | 'medium' | 'high'; toppings?: number[] } };
+type CartItem = Item & { quantity: number; custom?: { size: 'regular' | 'large'; temperature: 'hot' | 'cold'; ice: 'low' | 'medium' | 'high'; sugar: 'low' | 'medium' | 'high'; toppings?: number[] } };
+
+const SIZE_PRICES = { regular: 0, large: 0.75 };
+const TOPPING_PRICE = 0.50;
 
 export default function MenuGrid({ items }: { items: Item[] }) {
   const { t, language } = useLanguage();
   const [cart, setCart] = useState<CartItem[]>([]);
   const [customizing, setCustomizing] = useState<Item | null>(null);
   const [quantity, setQuantity] = useState(1);
+  const [size, setSize] = useState<'regular' | 'large'>('regular');
   const [temperature, setTemperature] = useState<'hot' | 'cold'>('cold');
   const [ice, setIce] = useState<'low' | 'medium' | 'high'>('medium');
   const [sugar, setSugar] = useState<'low' | 'medium' | 'high'>('medium');
@@ -35,6 +39,7 @@ export default function MenuGrid({ items }: { items: Item[] }) {
     if (needsCustom) {
       setCustomizing(it);
       setQuantity(1);
+      setSize('regular');
       setTemperature('cold');
       setIce('medium');
       setSugar('medium');
@@ -49,10 +54,13 @@ export default function MenuGrid({ items }: { items: Item[] }) {
 
   function confirmAdd() {
     if (!customizing) return;
+    const sizeUpcharge = SIZE_PRICES[size];
+    const toppingsUpcharge = selectedToppings.length * TOPPING_PRICE;
     const newItem: CartItem = { 
       ...customizing,
+      price: customizing.price + sizeUpcharge + toppingsUpcharge,
       quantity,
-      custom: { temperature, ice, sugar, toppings: selectedToppings.length > 0 ? selectedToppings : undefined } 
+      custom: { size, temperature, ice, sugar, toppings: selectedToppings.length > 0 ? selectedToppings : undefined } 
     };
     setCart((s) => [...s, newItem]);
     setAddedMessage(`${customizing.name} added to cart!`);
@@ -133,6 +141,18 @@ export default function MenuGrid({ items }: { items: Item[] }) {
             </div>
 
             <div className="mb-4">
+              <div className="font-medium mb-1">{t("Size")}</div>
+              <div className="flex gap-3">
+                {(['regular', 'large'] as const).map((s) => (
+                  <label key={s} className="flex items-center gap-2">
+                    <input type="radio" name="size" value={s} checked={size === s} onChange={() => setSize(s)} />
+                    <span className="capitalize">{t(s)} {SIZE_PRICES[s] > 0 ? `(+$${SIZE_PRICES[s].toFixed(2)})` : ''}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            <div className="mb-4">
               <div className="font-medium mb-1">{t("Temperature")}</div>
               <div className="flex gap-3">
                 {(['hot', 'cold'] as const).map((temp) => (
@@ -169,7 +189,7 @@ export default function MenuGrid({ items }: { items: Item[] }) {
             </div>
 
             <div className="mb-4">
-              <div className="font-medium mb-2">{t("Toppings")} ({t("optional")})</div>
+              <div className="font-medium mb-2">{t("Toppings")} ({t("optional")}) - +${TOPPING_PRICE.toFixed(2)} {t("each")}</div>
               <div className="grid grid-cols-2 gap-2">
                 {TOPPINGS.map((topping) => (
                   <label key={topping.id} className="flex items-center gap-2 cursor-pointer">

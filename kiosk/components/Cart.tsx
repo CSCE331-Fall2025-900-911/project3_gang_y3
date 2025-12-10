@@ -5,7 +5,7 @@ import { translateMenuItem } from '../lib/translations';
 import { TOPPINGS } from '../lib/toppings';
 
 type Item = { id: number | null; name: string; price: number };
-type CartItem = Item & { quantity: number; custom?: { temperature: 'hot' | 'cold'; ice: 'low' | 'medium' | 'high'; sugar: 'low' | 'medium' | 'high'; toppings?: number[] } };
+type CartItem = Item & { quantity: number; custom?: { size: 'regular' | 'large'; temperature: 'hot' | 'cold'; ice: 'low' | 'medium' | 'high'; sugar: 'low' | 'medium' | 'high'; toppings?: number[] } };
 
 export default function Cart({ items, onClear, onRemove, onUpdateQuantity }: { items: CartItem[]; onClear: () => void; onRemove?: (index: number) => void; onUpdateQuantity?: (index: number, delta: number) => void }) {
   const { t, language } = useLanguage();
@@ -149,7 +149,7 @@ export default function Cart({ items, onClear, onRemove, onUpdateQuantity }: { i
               </div>
               {it.custom && (
                 <div className="text-xs text-zinc-600 dark:text-zinc-400">
-                  {t('Temperature')}: {t(it.custom.temperature)} | {t('Ice')}: {t(it.custom.ice)} | {t('Sugar')}: {t(it.custom.sugar)}
+                  {t('Size')}: {t(it.custom.size)} | {t('Temperature')}: {t(it.custom.temperature)} | {t('Ice')}: {t(it.custom.ice)} | {t('Sugar')}: {t(it.custom.sugar)}
                   {it.custom.toppings && it.custom.toppings.length > 0 && (
                     <div className="mt-0.5">
                       {t('Toppings')}: {it.custom.toppings.map(id => TOPPINGS.find(t => t.id === id)?.name).filter(Boolean).join(', ')}
