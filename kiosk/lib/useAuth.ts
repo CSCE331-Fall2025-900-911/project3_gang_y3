@@ -20,11 +20,26 @@ interface SessionUser {
 
 export function useAuth(): AuthUser {
   const { data: session, status } = useSession();
-  const [authState, setAuthState] = useState<AuthUser>({
-    role: null,
-    username: null,
-    isAuthenticated: false,
-    isLoading: true,
+  const [authState, setAuthState] = useState<AuthUser>(() => {
+    // Initialize from sessionStorage if available (only on client)
+    if (typeof window !== 'undefined') {
+      const storedRole = sessionStorage.getItem('userRole');
+      const storedUsername = sessionStorage.getItem('username');
+      if (storedRole && storedUsername) {
+        return {
+          role: storedRole,
+          username: storedUsername,
+          isAuthenticated: true,
+          isLoading: false,
+        };
+      }
+    }
+    return {
+      role: null,
+      username: null,
+      isAuthenticated: false,
+      isLoading: true,
+    };
   });
 
   useEffect(() => {
@@ -42,14 +57,9 @@ export function useAuth(): AuthUser {
       return;
     }
 
-    // Check OAuth session
+    // Check OAuth session - wait until status is not loading
     if (status === "loading") {
-      setAuthState({
-        role: null,
-        username: null,
-        isAuthenticated: false,
-        isLoading: true,
-      });
+      // Keep loading state, don't change anything yet
       return;
     }
 
@@ -84,6 +94,7 @@ export function useAuth(): AuthUser {
       }
     }
 
+    // Only set to not loading/not authenticated if we've finished checking everything
     setAuthState({
       role: null,
       username: null,
