@@ -102,18 +102,20 @@ export async function getManagerData() {
       percentage: totalOrders > 0 ? Math.round((parseInt(row.count) / totalOrders) * 100) : 0
     }));
 
-    // Get best seller - use a simpler approach with LIKE matching
-    const bestSellerResult = await pool.query(
-      `SELECT m.item_name, COUNT(*) as sales 
-       FROM orders o
-       JOIN menu m ON o.item_link LIKE '%"' || m.menu_item_id || '":%'
-       WHERE o.order_date = CURRENT_DATE
-         AND o.item_link IS NOT NULL
-         AND LENGTH(o.item_link) > 2
-       GROUP BY m.item_name
-       ORDER BY sales DESC
-       LIMIT 1`
-    );
+    // Get best seller - handle item_link as either comma-separated ids or JSON-like string
+    const bestSellerResult = await pool.query(`
+      SELECT m.item_name, COUNT(*) as sales
+      FROM orders o,
+      LATERAL (
+        SELECT regexp_matches(o.item_link, '\\d+', 'g') AS menu_id_arr
+      ) AS ids,
+      unnest(ids.menu_id_arr) AS menu_id_str
+      JOIN menu m ON m.menu_item_id = menu_id_str::integer
+      WHERE o.order_date = CURRENT_DATE
+      GROUP BY m.item_name
+      ORDER BY sales DESC
+      LIMIT 1
+    `);
 
     // Get total orders today
     const totalOrdersResult = await pool.query(

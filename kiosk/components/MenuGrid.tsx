@@ -12,10 +12,14 @@ type CartItem = Item & { quantity: number; custom?: { size: 'regular' | 'large';
 const SIZE_PRICES = { regular: 0, large: 0.75 };
 const TOPPING_PRICE = 0.50;
 
+// Customization types: 'full' = all options, 'drink' = size/sugar/toppings (no temp/ice), 'quantity' = just quantity
+type CustomizationType = 'full' | 'drink' | 'quantity' | null;
+
 export default function MenuGrid({ items }: { items: Item[] }) {
   const { t, language } = useLanguage();
   const [cart, setCart] = useState<CartItem[]>([]);
   const [customizing, setCustomizing] = useState<Item | null>(null);
+  const [customType, setCustomType] = useState<CustomizationType>(null);
   const [quantity, setQuantity] = useState(1);
   const [size, setSize] = useState<'regular' | 'large'>('regular');
   const [temperature, setTemperature] = useState<'hot' | 'cold'>('cold');
@@ -24,28 +28,67 @@ export default function MenuGrid({ items }: { items: Item[] }) {
   const [selectedToppings, setSelectedToppings] = useState<number[]>([]);
   const [addedMessage, setAddedMessage] = useState<string | null>(null);
 
+  // Normalize category keys to lower case for consistent matching
   const grouped = items.reduce((acc: Record<string, Item[]>, it) => {
-    const cat = it.category?.trim() || "Other";
+    const cat = (it.category?.trim() || "Other").toLowerCase();
     if (!acc[cat]) acc[cat] = [];
     acc[cat].push(it);
     return acc;
   }, {});
 
+  // Desired category order
+  const categoryOrder = [
+    "milk tea",
+    "fruit tea",
+    "specialty",
+    "season",
+    "snacks"
+  ];
+
+  // Sort categories for display
+  // Use lower case keys for sorting and rendering
+  const groupedKeys = Object.keys(grouped);
+  const sortedCategories = [
+    ...categoryOrder.filter((cat) => groupedKeys.includes(cat)),
+    ...groupedKeys.filter((cat) => !categoryOrder.includes(cat))
+  ];
+
   function requestAdd(it: Item) {
     const cat = (it.category || '').toString().trim().toLowerCase();
-    const customizable = ['milk tea', 'fruit tea', 'specialty drinks', 'specialty'];
-    const needsCustom = customizable.includes(cat) || customizable.some((c) => cat.includes(c));
+    
+    // Full customization: milk tea, fruit tea, specialty drinks (size, temp, ice, sugar, toppings)
+    const fullCustom = ['milk tea', 'fruit tea', 'specialty drinks', 'specialty'];
+    // Drink customization: seasonal, smoothies (size, sugar, toppings - no temp/ice)
+    const drinkCustom = ['seasonal', 'smoothies', 'smoothie'];
+    // Quantity only: snacks/desserts
+    const quantityOnly = ['snacks', 'desserts', 'snacks/desserts'];
+    
+    const isFullCustom = fullCustom.includes(cat) || fullCustom.some((c) => cat.includes(c));
+    const isDrinkCustom = drinkCustom.includes(cat) || drinkCustom.some((c) => cat.includes(c));
+    const isQuantityOnly = quantityOnly.includes(cat) || quantityOnly.some((c) => cat.includes(c));
 
-    if (needsCustom) {
+    if (isFullCustom) {
       setCustomizing(it);
+      setCustomType('full');
       setQuantity(1);
       setSize('regular');
       setTemperature('cold');
       setIce('medium');
       setSugar('medium');
       setSelectedToppings([]);
+    } else if (isDrinkCustom) {
+      setCustomizing(it);
+      setCustomType('drink');
+      setQuantity(1);
+      setSize('regular');
+      setSugar('medium');
+      setSelectedToppings([]);
+    } else if (isQuantityOnly) {
+      setCustomizing(it);
+      setCustomType('quantity');
+      setQuantity(1);
     } else {
-      const newItem: CartItem = { ...it, quantity: 1 };
+      const newItem: CartItem = { ...it, id: it.id, quantity: 1 };
       setCart((s) => [...s, newItem]);
       setAddedMessage(`${it.name} added to cart!`);
       setTimeout(() => setAddedMessage(null), 1500);
@@ -54,18 +97,44 @@ export default function MenuGrid({ items }: { items: Item[] }) {
 
   function confirmAdd() {
     if (!customizing) return;
-    const sizeUpcharge = SIZE_PRICES[size];
-    const toppingsUpcharge = selectedToppings.length * TOPPING_PRICE;
-    const newItem: CartItem = { 
-      ...customizing,
-      price: customizing.price + sizeUpcharge + toppingsUpcharge,
-      quantity,
-      custom: { size, temperature, ice, sugar, toppings: selectedToppings.length > 0 ? selectedToppings : undefined } 
-    };
+    
+    let newItem: CartItem;
+    
+    if (customType === 'quantity') {
+      // Snacks - just quantity, no customization
+      newItem = { ...customizing, id: customizing.id, quantity };
+    } else if (customType === 'drink') {
+      // Seasonal/Smoothies - size, sugar, toppings (no temp/ice)
+      const sizeUpcharge = SIZE_PRICES[size];
+      const toppingsUpcharge = selectedToppings.length * TOPPING_PRICE;
+      newItem = { 
+        ...customizing,
+        id: customizing.id,
+        price: customizing.price + sizeUpcharge + toppingsUpcharge,
+        quantity,
+        custom: { size, temperature: 'cold', ice: 'medium', sugar, toppings: selectedToppings.length > 0 ? selectedToppings : undefined } 
+      };
+    } else if (customType === 'full') {
+      // Full customization
+      const sizeUpcharge = SIZE_PRICES[size];
+      const toppingsUpcharge = selectedToppings.length * TOPPING_PRICE;
+      newItem = {
+        ...customizing,
+        id: customizing.id,
+        price: customizing.price + sizeUpcharge + toppingsUpcharge,
+        quantity,
+        custom: { size, temperature, ice, sugar, toppings: selectedToppings.length > 0 ? selectedToppings : undefined }
+      };
+    } else {
+      // Fallback: just add with id
+      newItem = { ...customizing, id: customizing.id, quantity };
+    }
+    
     setCart((s) => [...s, newItem]);
     setAddedMessage(`${customizing.name} added to cart!`);
     setTimeout(() => setAddedMessage(null), 1500);
     setCustomizing(null);
+    setCustomType(null);
   }
 
   const toggleTopping = (toppingId: number) => {
@@ -88,6 +157,7 @@ export default function MenuGrid({ items }: { items: Item[] }) {
 
   function cancelAdd() {
     setCustomizing(null);
+    setCustomType(null);
   }
 
   function clearCart() {
@@ -101,11 +171,11 @@ export default function MenuGrid({ items }: { items: Item[] }) {
   return (
     <div className="relative">
       <div className="flex flex-col gap-10">
-        {Object.entries(grouped).map(([category, list]) => (
+        {sortedCategories.map((category) => (
           <div key={category}>
-            <h2 className="text-xl font-semibold mb-3 text-black dark:text-white">{category}</h2>
+            <h2 className="text-xl font-semibold mb-3 text-black dark:text-white">{category.charAt(0).toUpperCase() + category.slice(1)}</h2>
             <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
-              {list.map((it, idx) => (
+              {grouped[category].map((it, idx) => (
                 <ItemCard key={it.id ?? `${it.name ?? 'item'}-${idx}`} item={it} onAdd={requestAdd} />
               ))}
             </div>
@@ -140,70 +210,85 @@ export default function MenuGrid({ items }: { items: Item[] }) {
               </div>
             </div>
 
-            <div className="mb-4">
-              <div className="font-medium mb-1">{t("Size")}</div>
-              <div className="flex gap-3">
-                {(['regular', 'large'] as const).map((s) => (
-                  <label key={s} className="flex items-center gap-2">
-                    <input type="radio" name="size" value={s} checked={size === s} onChange={() => setSize(s)} />
-                    <span className="capitalize">{t(s)} {SIZE_PRICES[s] > 0 ? `(+$${SIZE_PRICES[s].toFixed(2)})` : ''}</span>
-                  </label>
-                ))}
+            {/* Size - show for full and drink customization */}
+            {(customType === 'full' || customType === 'drink') && (
+              <div className="mb-4">
+                <div className="font-medium mb-1">{t("Size")}</div>
+                <div className="flex gap-3">
+                  {(['regular', 'large'] as const).map((s) => (
+                    <label key={s} className="flex items-center gap-2">
+                      <input type="radio" name="size" value={s} checked={size === s} onChange={() => setSize(s)} />
+                      <span className="capitalize">{t(s)} {SIZE_PRICES[s] > 0 ? `(+$${SIZE_PRICES[s].toFixed(2)})` : ''}</span>
+                    </label>
+                  ))}
+                </div>
               </div>
-            </div>
+            )}
 
-            <div className="mb-4">
-              <div className="font-medium mb-1">{t("Temperature")}</div>
-              <div className="flex gap-3">
-                {(['hot', 'cold'] as const).map((temp) => (
-                  <label key={temp} className="flex items-center gap-2">
-                    <input type="radio" name="temperature" value={temp} checked={temperature === temp} onChange={() => setTemperature(temp)} />
-                    <span className="capitalize">{t(temp)}</span>
-                  </label>
-                ))}
+            {/* Temperature - show only for full customization */}
+            {customType === 'full' && (
+              <div className="mb-4">
+                <div className="font-medium mb-1">{t("Temperature")}</div>
+                <div className="flex gap-3">
+                  {(['hot', 'cold'] as const).map((temp) => (
+                    <label key={temp} className="flex items-center gap-2">
+                      <input type="radio" name="temperature" value={temp} checked={temperature === temp} onChange={() => setTemperature(temp)} />
+                      <span className="capitalize">{t(temp)}</span>
+                    </label>
+                  ))}
+                </div>
               </div>
-            </div>
+            )}
 
-            <div className="mb-4">
-              <div className="font-medium mb-1">{t("Ice")}</div>
-              <div className="flex gap-3">
-                {(['low', 'medium', 'high'] as const).map((lvl) => (
-                  <label key={lvl} className="flex items-center gap-2">
-                    <input type="radio" name="ice" value={lvl} checked={ice === lvl} onChange={() => setIce(lvl)} />
-                    <span className="capitalize">{t(lvl)}</span>
-                  </label>
-                ))}
+            {/* Ice - show only for full customization */}
+            {customType === 'full' && (
+              <div className="mb-4">
+                <div className="font-medium mb-1">{t("Ice")}</div>
+                <div className="flex gap-3">
+                  {(['low', 'medium', 'high'] as const).map((lvl) => (
+                    <label key={lvl} className="flex items-center gap-2">
+                      <input type="radio" name="ice" value={lvl} checked={ice === lvl} onChange={() => setIce(lvl)} />
+                      <span className="capitalize">{t(lvl)}</span>
+                    </label>
+                  ))}
+                </div>
               </div>
-            </div>
+            )}
 
-            <div className="mb-4">
-              <div className="font-medium mb-1">{t("Sugar")}</div>
-              <div className="flex gap-3">
-                {(['low', 'medium', 'high'] as const).map((lvl) => (
-                  <label key={lvl} className="flex items-center gap-2">
-                    <input type="radio" name="sugar" value={lvl} checked={sugar === lvl} onChange={() => setSugar(lvl)} />
-                    <span className="capitalize">{t(lvl)}</span>
-                  </label>
-                ))}
+            {/* Sugar - show for full and drink customization */}
+            {(customType === 'full' || customType === 'drink') && (
+              <div className="mb-4">
+                <div className="font-medium mb-1">{t("Sugar")}</div>
+                <div className="flex gap-3">
+                  {(['low', 'medium', 'high'] as const).map((lvl) => (
+                    <label key={lvl} className="flex items-center gap-2">
+                      <input type="radio" name="sugar" value={lvl} checked={sugar === lvl} onChange={() => setSugar(lvl)} />
+                      <span className="capitalize">{t(lvl)}</span>
+                    </label>
+                  ))}
+                </div>
               </div>
-            </div>
+            )}
 
-            <div className="mb-4">
-              <div className="font-medium mb-2">{t("Toppings")} ({t("optional")}) - +${TOPPING_PRICE.toFixed(2)} {t("each")}</div>
-              <div className="grid grid-cols-2 gap-2">
-                {TOPPINGS.map((topping) => (
-                  <label key={topping.id} className="flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={selectedToppings.includes(topping.id)}
-                      onChange={() => toggleTopping(topping.id)}
-                      className="cursor-pointer"
-                    />
-                    <span className="text-sm">{t(topping.name)}</span>
-                  </label>
-                ))}
+            {/* Toppings - show for full and drink customization */}
+            {(customType === 'full' || customType === 'drink') && (
+              <div className="mb-4">
+                <div className="font-medium mb-2">{t("Toppings")} ({t("optional")}) - +${TOPPING_PRICE.toFixed(2)} {t("each")}</div>
+                <div className="grid grid-cols-2 gap-2">
+                  {TOPPINGS.map((topping) => (
+                    <label key={topping.id} className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={selectedToppings.includes(topping.id)}
+                        onChange={() => toggleTopping(topping.id)}
+                        className="cursor-pointer"
+                      />
+                      <span className="text-sm">{t(topping.name)}</span>
+                    </label>
+                  ))}
+                </div>
               </div>
-            </div>
+            )}
 
             <div className="flex justify-end gap-3 mt-4">
               <button className="px-3 py-1 rounded border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors" onClick={cancelAdd}>

@@ -36,10 +36,11 @@ export async function getMenuItems(limit = 100) {
     `${nameCol} as name`,
     `${priceCol} as price`,
     categoryCol ? `${categoryCol} as category` : `NULL as category`,
+    `availability`
   ].join(', ');
 
   const res = await pool.query(`SELECT ${selectCols} FROM menu LIMIT $1`, [limit]);
-  return res.rows.map((r: any) => ({ id: r.id ?? null, name: r.name, price: Number(r.price), category: r.category ?? null }));
+  return res.rows.map((r: any) => ({ id: r.id ?? null, name: r.name, price: Number(r.price), category: r.category ?? null, availability: r.availability }));
 }
 
 export async function getTableColumns(table: string) {

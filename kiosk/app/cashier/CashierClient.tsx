@@ -12,6 +12,7 @@ import { signOut } from 'next-auth/react';
 
 type MenuItem = { id: number | null; name: string; price: number; category?: string | null };
 type CartItem = MenuItem & { quantity: number; custom?: { size: 'regular' | 'large'; temperature: 'hot' | 'cold'; ice: 'low' | 'medium' | 'high'; sugar: 'low' | 'medium' | 'high'; toppings?: number[] } };
+type CustomizationType = 'full' | 'drink' | 'quantity' | null;
 
 const SIZE_PRICES = { regular: 0, large: 0.75 };
 const TOPPING_PRICE = 0.50;
@@ -26,6 +27,7 @@ export default function CashierClient({ menuItems }: CashierClientProps) {
   const { role, isLoading } = useAuth();
   const [cart, setCart] = useState<CartItem[]>([]);
   const [customizing, setCustomizing] = useState<MenuItem | null>(null);
+  const [customType, setCustomType] = useState<CustomizationType>(null);
   const [quantity, setQuantity] = useState(1);
   const [size, setSize] = useState<'regular' | 'large'>('regular');
   const [temperature, setTemperature] = useState<'hot' | 'cold'>('cold');
@@ -49,17 +51,38 @@ export default function CashierClient({ menuItems }: CashierClientProps) {
 
   const requestAdd = (item: MenuItem) => {
     const cat = (item.category || '').toString().trim().toLowerCase();
-    const customizable = ['milk tea', 'fruit tea', 'specialty drinks', 'specialty'];
-    const needsCustom = customizable.includes(cat) || customizable.some((c) => cat.includes(c));
+    
+    // Full customization: milk tea, fruit tea, specialty drinks (size, temp, ice, sugar, toppings)
+    const fullCustom = ['milk tea', 'fruit tea', 'specialty drinks', 'specialty'];
+    // Drink customization: seasonal, smoothies (size, sugar, toppings - no temp/ice)
+    const drinkCustom = ['seasonal', 'smoothies', 'smoothie'];
+    // Quantity only: snacks/desserts
+    const quantityOnly = ['snacks', 'desserts', 'snacks/desserts'];
+    
+    const isFullCustom = fullCustom.includes(cat) || fullCustom.some((c) => cat.includes(c));
+    const isDrinkCustom = drinkCustom.includes(cat) || drinkCustom.some((c) => cat.includes(c));
+    const isQuantityOnly = quantityOnly.includes(cat) || quantityOnly.some((c) => cat.includes(c));
 
-    if (needsCustom) {
+    if (isFullCustom) {
       setCustomizing(item);
+      setCustomType('full');
       setQuantity(1);
       setSize('regular');
       setTemperature('cold');
       setIce('medium');
       setSugar('medium');
       setSelectedToppings([]);
+    } else if (isDrinkCustom) {
+      setCustomizing(item);
+      setCustomType('drink');
+      setQuantity(1);
+      setSize('regular');
+      setSugar('medium');
+      setSelectedToppings([]);
+    } else if (isQuantityOnly) {
+      setCustomizing(item);
+      setCustomType('quantity');
+      setQuantity(1);
     } else {
       setCart(prev => [...prev, { ...item, quantity: 1 }]);
     }
@@ -67,16 +90,37 @@ export default function CashierClient({ menuItems }: CashierClientProps) {
 
   const confirmAdd = () => {
     if (!customizing) return;
-    const sizeUpcharge = SIZE_PRICES[size];
-    const toppingsUpcharge = selectedToppings.length * TOPPING_PRICE;
-    const newItem: CartItem = { 
-      ...customizing,
-      price: customizing.price + sizeUpcharge + toppingsUpcharge,
-      quantity,
-      custom: { size, temperature, ice, sugar, toppings: selectedToppings.length > 0 ? selectedToppings : undefined } 
-    };
+    
+    let newItem: CartItem;
+    
+    if (customType === 'quantity') {
+      // Snacks - just quantity, no customization
+      newItem = { ...customizing, quantity };
+    } else if (customType === 'drink') {
+      // Seasonal/Smoothies - size, sugar, toppings (no temp/ice)
+      const sizeUpcharge = SIZE_PRICES[size];
+      const toppingsUpcharge = selectedToppings.length * TOPPING_PRICE;
+      newItem = { 
+        ...customizing,
+        price: customizing.price + sizeUpcharge + toppingsUpcharge,
+        quantity,
+        custom: { size, temperature: 'cold', ice: 'medium', sugar, toppings: selectedToppings.length > 0 ? selectedToppings : undefined } 
+      };
+    } else {
+      // Full customization
+      const sizeUpcharge = SIZE_PRICES[size];
+      const toppingsUpcharge = selectedToppings.length * TOPPING_PRICE;
+      newItem = { 
+        ...customizing,
+        price: customizing.price + sizeUpcharge + toppingsUpcharge,
+        quantity,
+        custom: { size, temperature, ice, sugar, toppings: selectedToppings.length > 0 ? selectedToppings : undefined } 
+      };
+    }
+    
     setCart(prev => [...prev, newItem]);
     setCustomizing(null);
+    setCustomType(null);
   };
 
   const toggleTopping = (toppingId: number) => {
@@ -107,6 +151,7 @@ export default function CashierClient({ menuItems }: CashierClientProps) {
 
   const cancelAdd = () => {
     setCustomizing(null);
+    setCustomType(null);
     setQuantity(1);
     setTemperature('cold');
     setIce('medium');
@@ -180,88 +225,103 @@ export default function CashierClient({ menuItems }: CashierClientProps) {
               </div>
             </div>
 
-            <div className="mb-4">
-              <div className="font-medium mb-1">{t("Size")}</div>
-              <div className="flex gap-3">
-                {(['regular', 'large'] as const).map((s) => (
-                  <label key={s} className="flex items-center gap-2">
-                    <input type="radio" name="size" value={s} checked={size === s} onChange={() => setSize(s)} />
-                    <span className="capitalize">{t(s)} {SIZE_PRICES[s] > 0 ? `(+$${SIZE_PRICES[s].toFixed(2)})` : ''}</span>
-                  </label>
-                ))}
+            {/* Size - show for full and drink customization */}
+            {(customType === 'full' || customType === 'drink') && (
+              <div className="mb-4">
+                <div className="font-medium mb-1">{t("Size")}</div>
+                <div className="flex gap-3">
+                  {(['regular', 'large'] as const).map((s) => (
+                    <label key={s} className="flex items-center gap-2">
+                      <input type="radio" name="size" value={s} checked={size === s} onChange={() => setSize(s)} />
+                      <span className="capitalize">{t(s)} {SIZE_PRICES[s] > 0 ? `(+$${SIZE_PRICES[s].toFixed(2)})` : ''}</span>
+                    </label>
+                  ))}
+                </div>
               </div>
-            </div>
+            )}
 
-            <div className="mb-4">
-              <div className="font-medium mb-1">{t("Temperature")}</div>
-              <div className="flex gap-3">
-                {(['hot', 'cold'] as const).map((temp) => (
-                  <label key={temp} className="flex items-center gap-2">
-                    <input
-                      type="radio"
-                      name="temperature"
-                      value={temp}
-                      checked={temperature === temp}
-                      onChange={() => setTemperature(temp)}
-                    />
-                    <span className="capitalize">{t(temp)}</span>
-                  </label>
-                ))}
+            {/* Temperature - show only for full customization */}
+            {customType === 'full' && (
+              <div className="mb-4">
+                <div className="font-medium mb-1">{t("Temperature")}</div>
+                <div className="flex gap-3">
+                  {(['hot', 'cold'] as const).map((temp) => (
+                    <label key={temp} className="flex items-center gap-2">
+                      <input
+                        type="radio"
+                        name="temperature"
+                        value={temp}
+                        checked={temperature === temp}
+                        onChange={() => setTemperature(temp)}
+                      />
+                      <span className="capitalize">{t(temp)}</span>
+                    </label>
+                  ))}
+                </div>
               </div>
-            </div>
+            )}
 
-            <div className="mb-4">
-              <div className="font-medium mb-1">{t("Ice")}</div>
-              <div className="flex gap-3">
-                {(['low', 'medium', 'high'] as const).map((lvl) => (
-                  <label key={lvl} className="flex items-center gap-2">
-                    <input
-                      type="radio"
-                      name="ice"
-                      value={lvl}
-                      checked={ice === lvl}
-                      onChange={() => setIce(lvl)}
-                    />
-                    <span className="capitalize">{t(lvl)}</span>
-                  </label>
-                ))}
+            {/* Ice - show only for full customization */}
+            {customType === 'full' && (
+              <div className="mb-4">
+                <div className="font-medium mb-1">{t("Ice")}</div>
+                <div className="flex gap-3">
+                  {(['low', 'medium', 'high'] as const).map((lvl) => (
+                    <label key={lvl} className="flex items-center gap-2">
+                      <input
+                        type="radio"
+                        name="ice"
+                        value={lvl}
+                        checked={ice === lvl}
+                        onChange={() => setIce(lvl)}
+                      />
+                      <span className="capitalize">{t(lvl)}</span>
+                    </label>
+                  ))}
+                </div>
               </div>
-            </div>
+            )}
 
-            <div className="mb-4">
-              <div className="font-medium mb-1">{t("Sugar")}</div>
-              <div className="flex gap-3">
-                {(['low', 'medium', 'high'] as const).map((lvl) => (
-                  <label key={lvl} className="flex items-center gap-2">
-                    <input
-                      type="radio"
-                      name="sugar"
-                      value={lvl}
-                      checked={sugar === lvl}
-                      onChange={() => setSugar(lvl)}
-                    />
-                    <span className="capitalize">{t(lvl)}</span>
-                  </label>
-                ))}
+            {/* Sugar - show for full and drink customization */}
+            {(customType === 'full' || customType === 'drink') && (
+              <div className="mb-4">
+                <div className="font-medium mb-1">{t("Sugar")}</div>
+                <div className="flex gap-3">
+                  {(['low', 'medium', 'high'] as const).map((lvl) => (
+                    <label key={lvl} className="flex items-center gap-2">
+                      <input
+                        type="radio"
+                        name="sugar"
+                        value={lvl}
+                        checked={sugar === lvl}
+                        onChange={() => setSugar(lvl)}
+                      />
+                      <span className="capitalize">{t(lvl)}</span>
+                    </label>
+                  ))}
+                </div>
               </div>
-            </div>
+            )}
 
-            <div className="mb-4">
-              <div className="font-medium mb-2">{t("Toppings")} ({t("optional")}) - +${TOPPING_PRICE.toFixed(2)} {t("each")}</div>
-              <div className="grid grid-cols-2 gap-2">
-                {TOPPINGS.map((topping) => (
-                  <label key={topping.id} className="flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={selectedToppings.includes(topping.id)}
-                      onChange={() => toggleTopping(topping.id)}
-                      className="cursor-pointer"
-                    />
-                    <span className="text-sm">{topping.name}</span>
-                  </label>
-                ))}
+            {/* Toppings - show for full and drink customization */}
+            {(customType === 'full' || customType === 'drink') && (
+              <div className="mb-4">
+                <div className="font-medium mb-2">{t("Toppings")} ({t("optional")}) - +${TOPPING_PRICE.toFixed(2)} {t("each")}</div>
+                <div className="grid grid-cols-2 gap-2">
+                  {TOPPINGS.map((topping) => (
+                    <label key={topping.id} className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={selectedToppings.includes(topping.id)}
+                        onChange={() => toggleTopping(topping.id)}
+                        className="cursor-pointer"
+                      />
+                      <span className="text-sm">{topping.name}</span>
+                    </label>
+                  ))}
+                </div>
               </div>
-            </div>
+            )}
 
             <div className="flex justify-end gap-3 mt-4">
               <button 
