@@ -8,6 +8,7 @@ import { useLanguage } from '../../components/LanguageProvider';
 import { translateMenuItem } from '../../lib/translations';
 import { TOPPINGS } from '../../lib/toppings';
 import { useAuth } from '../../lib/useAuth';
+import { signOut } from 'next-auth/react';
 
 type MenuItem = { id: number | null; name: string; price: number; category?: string | null };
 type CartItem = MenuItem & { quantity: number; custom?: { size: 'regular' | 'large'; temperature: 'hot' | 'cold'; ice: 'low' | 'medium' | 'high'; sugar: 'low' | 'medium' | 'high'; toppings?: number[] } };
@@ -38,10 +39,12 @@ export default function CashierClient({ menuItems }: CashierClientProps) {
     }
   }, [role, isLoading, router]);
 
-  const handleSignOut = () => {
+  const handleSignOut = async () => {
     sessionStorage.removeItem('userRole');
     sessionStorage.removeItem('username');
-    router.push('/');
+    sessionStorage.removeItem('pendingRole');
+    sessionStorage.removeItem('pendingUsername');
+    await signOut({ callbackUrl: '/' });
   };
 
   const requestAdd = (item: MenuItem) => {

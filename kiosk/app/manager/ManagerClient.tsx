@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import Image from "next/image";
 import { useLanguage } from '../../components/LanguageProvider';
 import { useAuth } from '../../lib/useAuth';
+import { signOut } from 'next-auth/react';
 import type { InventoryItem, BestSeller, SalesData, RecentOrder, MenuItem } from '../../lib/managerData';
 
 interface ManagerClientProps {
@@ -53,10 +54,12 @@ export default function ManagerClient({ initialData }: ManagerClientProps) {
     }
   }, [role, isLoading, router]);
 
-  const handleSignOut = () => {
+  const handleSignOut = async () => {
     sessionStorage.removeItem('userRole');
     sessionStorage.removeItem('username');
-    router.push('/');
+    sessionStorage.removeItem('pendingRole');
+    sessionStorage.removeItem('pendingUsername');
+    await signOut({ callbackUrl: '/' });
   };
 
   const handleRefresh = () => {
