@@ -1,10 +1,5 @@
 import { NextResponse } from 'next/server';
 import nodemailer from 'nodemailer';
-import { Pool } from 'pg';
-
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-});
 
 // Create Gmail transporter
 const transporter = nodemailer.createTransport({
@@ -37,21 +32,9 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Email and order ID are required' }, { status: 400 });
     }
 
-    // Fetch order details from database if items not provided
-    let orderItems: OrderItem[] = items;
-    let orderTotal = total;
-
-    if (!orderItems) {
-      const orderResult = await pool.query(
-        'SELECT * FROM orders WHERE order_id = $1',
-        [orderId]
-      );
-      if (orderResult.rows.length === 0) {
-        return NextResponse.json({ error: 'Order not found' }, { status: 404 });
-      }
-      // If you have order_items table, fetch from there
-      // For now, we'll use passed items
-    }
+    // Use passed items and total
+    const orderItems: OrderItem[] = items;
+    const orderTotal = total;
 
     // Build the receipt HTML
     const itemsHtml = orderItems.map((item: OrderItem) => `

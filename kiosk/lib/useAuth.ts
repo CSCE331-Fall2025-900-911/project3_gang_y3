@@ -49,19 +49,38 @@ export function useAuth(): AuthUser {
 
     if (session?.user) {
       const user = session.user as SessionUser;
-      const oauthRole = user.role;
-      const oauthUsername = user.dbUsername || user.name;
       
-      if (oauthRole) {
+      // Check if there's a pending role from the login flow
+      let finalRole = user.role;
+      let finalUsername = user.dbUsername || user.name;
+      
+      if (typeof window !== 'undefined') {
+        const pendingRole = sessionStorage.getItem('pendingRole');
+        const pendingUsername = sessionStorage.getItem('pendingUsername');
+        
+        if (pendingRole) {
+          // Use the role that was verified during login
+          finalRole = pendingRole;
+          finalUsername = pendingUsername || finalUsername;
+          
+          // Clear the pending values and store as active
+          sessionStorage.removeItem('pendingRole');
+          sessionStorage.removeItem('pendingUsername');
+          sessionStorage.setItem('userRole', finalRole);
+          sessionStorage.setItem('username', finalUsername || '');
+        }
+      }
+      
+      if (finalRole) {
         // Store in sessionStorage for consistency
         if (typeof window !== 'undefined') {
-          sessionStorage.setItem('userRole', oauthRole);
-          sessionStorage.setItem('username', oauthUsername || '');
+          sessionStorage.setItem('userRole', finalRole);
+          sessionStorage.setItem('username', finalUsername || '');
         }
         
         return {
-          role: oauthRole,
-          username: oauthUsername || null,
+          role: finalRole,
+          username: finalUsername || null,
           isAuthenticated: true,
           isLoading: false,
         };

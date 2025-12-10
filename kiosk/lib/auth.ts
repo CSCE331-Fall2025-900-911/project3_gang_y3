@@ -36,12 +36,12 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       }
       return true;
     },
-    async jwt({ token, account, profile }) {
+    async jwt({ token, account, profile, trigger }) {
       if (account && profile) {
         token.email = profile.email;
         token.name = profile.name;
         
-        // Fetch role from database
+        // Fetch role from database - get all roles for this email
         try {
           const result = await pool.query(
             "SELECT role, username FROM authentication WHERE email = $1",
@@ -49,6 +49,9 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           );
           
           if (result.rows.length > 0) {
+            // Store all available roles
+            token.roles = result.rows.map(r => r.role);
+            // Default to first role found, will be overridden by session storage on client
             token.role = result.rows[0].role;
             token.dbUsername = result.rows[0].username;
           }
@@ -63,6 +66,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         session.user.email = token.email as string;
         session.user.name = token.name as string;
         (session.user as any).role = token.role as string;
+        (session.user as any).roles = token.roles as string[];
         (session.user as any).dbUsername = token.dbUsername as string;
       }
       return session;
