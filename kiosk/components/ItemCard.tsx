@@ -3,7 +3,6 @@ import React from 'react';
 import { useLanguage } from './LanguageProvider';
 import { translateMenuItem } from '../lib/translations';
 
-type Item = { id: number | null; name: string; price: number; category?: string | null };
 type Item = { id: number | null; name: string; price: number; category?: string | null; availability?: boolean };
 
 export default function ItemCard({ item, onAdd }: { item: Item; onAdd: (it: Item) => void }) {
