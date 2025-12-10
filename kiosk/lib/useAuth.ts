@@ -1,7 +1,7 @@
 "use client";
 
 import { useSession } from "next-auth/react";
-import { useMemo } from "react";
+import { useState, useEffect } from "react";
 
 interface AuthUser {
   role: string | null;
@@ -20,80 +20,77 @@ interface SessionUser {
 
 export function useAuth(): AuthUser {
   const { data: session, status } = useSession();
+  const [authState, setAuthState] = useState<AuthUser>({
+    role: null,
+    username: null,
+    isAuthenticated: false,
+    isLoading: true,
+  });
 
-  const authUser = useMemo(() => {
+  useEffect(() => {
     // Check session storage first (for username/password login)
-    if (typeof window !== 'undefined') {
-      const storedRole = sessionStorage.getItem('userRole');
-      const storedUsername = sessionStorage.getItem('username');
+    const storedRole = sessionStorage.getItem('userRole');
+    const storedUsername = sessionStorage.getItem('username');
 
-      if (storedRole && storedUsername) {
-        return {
-          role: storedRole,
-          username: storedUsername,
-          isAuthenticated: true,
-          isLoading: false,
-        };
-      }
+    if (storedRole && storedUsername) {
+      setAuthState({
+        role: storedRole,
+        username: storedUsername,
+        isAuthenticated: true,
+        isLoading: false,
+      });
+      return;
     }
 
     // Check OAuth session
     if (status === "loading") {
-      return {
+      setAuthState({
         role: null,
         username: null,
         isAuthenticated: false,
         isLoading: true,
-      };
+      });
+      return;
     }
 
     if (session?.user) {
       const user = session.user as SessionUser;
       
       // Check if there's a pending role from the login flow
-      let finalRole = user.role;
-      let finalUsername = user.dbUsername || user.name;
+      const pendingRole = sessionStorage.getItem('pendingRole');
+      const pendingUsername = sessionStorage.getItem('pendingUsername');
       
-      if (typeof window !== 'undefined') {
-        const pendingRole = sessionStorage.getItem('pendingRole');
-        const pendingUsername = sessionStorage.getItem('pendingUsername');
-        
-        if (pendingRole) {
-          // Use the role that was verified during login
-          finalRole = pendingRole;
-          finalUsername = pendingUsername || finalUsername;
-          
-          // Clear the pending values and store as active
-          sessionStorage.removeItem('pendingRole');
-          sessionStorage.removeItem('pendingUsername');
-          sessionStorage.setItem('userRole', finalRole);
-          sessionStorage.setItem('username', finalUsername || '');
-        }
+      let finalRole = pendingRole || user.role;
+      let finalUsername = pendingUsername || user.dbUsername || user.name;
+      
+      if (pendingRole) {
+        // Clear the pending values
+        sessionStorage.removeItem('pendingRole');
+        sessionStorage.removeItem('pendingUsername');
       }
       
       if (finalRole) {
-        // Store in sessionStorage for consistency
-        if (typeof window !== 'undefined') {
-          sessionStorage.setItem('userRole', finalRole);
-          sessionStorage.setItem('username', finalUsername || '');
-        }
+        // Store in sessionStorage for persistence
+        sessionStorage.setItem('userRole', finalRole);
+        sessionStorage.setItem('username', finalUsername || '');
         
-        return {
+        setAuthState({
           role: finalRole,
           username: finalUsername || null,
           isAuthenticated: true,
           isLoading: false,
-        };
+        });
+        return;
       }
     }
 
-    return {
+    setAuthState({
       role: null,
       username: null,
       isAuthenticated: false,
       isLoading: false,
-    };
+    });
   }, [session, status]);
 
-  return authUser;
+  return authState;
 }
