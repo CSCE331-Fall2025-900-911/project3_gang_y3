@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { signIn } from 'next-auth/react';
 
@@ -19,6 +19,14 @@ export default function LoginModal({ role, onClose }: LoginModalProps) {
   const [showEmailPrompt, setShowEmailPrompt] = useState(false);
   const [googleEmail, setGoogleEmail] = useState('');
   const router = useRouter();
+
+  // Clear any existing session data when modal opens to ensure clean login for new role
+  useEffect(() => {
+    sessionStorage.removeItem('userRole');
+    sessionStorage.removeItem('username');
+    sessionStorage.removeItem('pendingRole');
+    sessionStorage.removeItem('pendingUsername');
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
