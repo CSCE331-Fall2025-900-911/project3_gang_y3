@@ -218,7 +218,13 @@ export async function getManagerData() {
     return {
       inventory: [],
       bestSeller: { name: 'Error loading', sales: 0 },
-      salesData: { today: 0, yesterday: 0, week: 0, topCategories: [] },
+      salesData: {
+        today: 0,
+        yesterday: 0,
+        week: 0,
+        topCategories: [],
+        hourly: [],
+      },
       recentOrders: [],
       totalOrdersToday: 0,
       lowStockItems: [],
