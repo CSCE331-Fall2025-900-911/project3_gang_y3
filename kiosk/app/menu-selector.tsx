@@ -27,7 +27,7 @@ export default async function MenuSelector() {
           <div className="flex flex-col items-center text-center space-y-8 animate-in fade-in zoom-in duration-500">
             <div className="space-y-4">
               <h1 className="text-5xl font-extrabold tracking-tight text-zinc-900 dark:text-zinc-100 bg-gradient-to-r from-blue-600 to-violet-600 bg-clip-text text-transparent">
-                Welcome to Panda Express
+                Welcome to our Boba Shop
               </h1>
               <p className="text-lg text-zinc-600 dark:text-zinc-400 max-w-md mx-auto">
                 Please sign in or continue as a guest.
