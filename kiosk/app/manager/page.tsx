@@ -1,10 +1,12 @@
-import ManagerClient from './ManagerClient';
+
+
 import { getManagerData } from '../../lib/managerData';
+import ManagerPageClient from './ManagerPageClient';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
-export default async function ManagerView() {
+export default async function ManagerPage() {
   const data = await getManagerData();
-  return <ManagerClient initialData={data} />;
+  return <ManagerPageClient initialData={data} />;
 }

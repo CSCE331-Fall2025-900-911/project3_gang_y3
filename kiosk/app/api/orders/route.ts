@@ -10,6 +10,7 @@ type CartItem = {
   name: string;
   price: number;
   quantity: number;
+  pointsCost?: number;
   custom?: {
     temperature: 'hot' | 'cold';
     ice: 'low' | 'medium' | 'high';
@@ -20,21 +21,52 @@ type CartItem = {
 
 export async function POST(request: NextRequest) {
   const client = await pool.connect();
-  
+
   try {
-    const { items }: { items: CartItem[] } = await request.json();
-    
+    const { items, customerId, paymentMethod }: { items: CartItem[], customerId?: number, paymentMethod?: string } = await request.json();
+
     if (!items || items.length === 0) {
       return NextResponse.json({ error: 'Cart is empty' }, { status: 400 });
     }
-    
+
+    // Validate payment method
+    const validPaymentMethod = paymentMethod === 'Card' ? 'Card' : 'Cash';
+
+    // Check for point redemptions
+    let totalPointsCost = 0;
+    for (const item of items) {
+      if (item.pointsCost && item.pointsCost > 0) {
+        totalPointsCost += item.pointsCost * item.quantity;
+      }
+    }
+
+    if (totalPointsCost > 0) {
+      if (!customerId) {
+        return NextResponse.json({ error: 'Customer ID required for rewards' }, { status: 400 });
+      }
+      // Verify points balance
+      const custRes = await client.query('SELECT points FROM customer WHERE customer_id = $1', [customerId]);
+      if (custRes.rows.length === 0 || custRes.rows[0].points < totalPointsCost) {
+        return NextResponse.json({ error: 'Insufficient points for rewards' }, { status: 400 });
+      }
+    }
+
     await client.query('BEGIN');
-    
+
+    // Deduct points first if needed
+    if (totalPointsCost > 0 && customerId) {
+      await client.query(
+        'UPDATE customer SET points = points - $1 WHERE customer_id = $2',
+        [totalPointsCost, customerId]
+      );
+      console.log(`[Points System] Deducted ${totalPointsCost} points for rewards.`);
+    }
+
     const totalAmount = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-    
+
     const maxIdResult = await client.query('SELECT COALESCE(MAX(order_id), 0) + 1 as next_id FROM orders');
     const nextOrderId = maxIdResult.rows[0].next_id;
-    
+
     // Get menu_item_id for each item by name
     const itemIds: number[] = [];
     for (const item of items) {
@@ -47,7 +79,7 @@ export async function POST(request: NextRequest) {
       }
     }
     const itemLink = itemIds.join(',');
-    
+
     const customId = items.map(item => {
       if (item.custom) {
         const toppingsStr = item.custom.toppings ? `toppings:${item.custom.toppings.join(',')}` : '';
@@ -55,13 +87,29 @@ export async function POST(request: NextRequest) {
       }
       return `qty:${item.quantity}`;
     }).join('|');
-    
+
     await client.query(
       `INSERT INTO orders (order_id, order_date, order_time, total_amount, payment_method, order_status, customer_id, item_link, custom_id)
        VALUES ($1, CURRENT_DATE, CURRENT_TIME, $2, $3, $4, $5, $6, $7)`,
-      [nextOrderId, totalAmount, 'Cash', 'Completed', null, itemLink, customId]
+      [nextOrderId, totalAmount, validPaymentMethod, 'Completed', customerId || null, itemLink, customId]
     );
-    
+
+    // Update customer points if customerId is present
+    if (customerId) {
+      console.log(`[Points System] Processing points for customerId: ${customerId}`);
+      // 10 points per $1
+      const pointsEarned = Math.floor(totalAmount * 10);
+      console.log(`[Points System] Order Total: ${totalAmount}, Points Earned: ${pointsEarned}`);
+
+      const updateRes = await client.query(
+        'UPDATE customer SET points = COALESCE(points, 0) + $1 WHERE customer_id = $2 RETURNING points',
+        [pointsEarned, customerId]
+      );
+      console.log(`[Points System] Updated points. New Balance: ${updateRes.rows[0]?.points}`);
+    } else {
+      console.log('[Points System] No customerId provided in order.');
+    }
+
 
     // Deduct inventory for all ingredients linked to each menu item
     for (const item of items) {
@@ -122,18 +170,18 @@ export async function POST(request: NextRequest) {
         console.error('Error deducting inventory for item:', item, err);
       }
     }
-    
+
     await client.query('COMMIT');
-    
-    return NextResponse.json({ 
-      success: true, 
+
+    return NextResponse.json({
+      success: true,
       orderId: nextOrderId,
-      totalAmount: totalAmount 
+      totalAmount: totalAmount
     });
   } catch (error) {
     await client.query('ROLLBACK');
     console.error('Order placement error:', error);
-    return NextResponse.json({ 
+    return NextResponse.json({
       error: 'Failed to place order',
       details: error instanceof Error ? error.message : String(error)
     }, { status: 500 });

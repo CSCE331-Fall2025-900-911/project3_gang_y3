@@ -5,9 +5,10 @@ import { translateMenuItem } from '../lib/translations';
 
 interface RecommendationProps {
   menuItems: Array<{ id: number | null; name: string; price: number; category?: string | null }>;
+  onAddToCart?: (item: any) => void;
 }
 
-export default function WeatherRecommendation({ menuItems }: RecommendationProps) {
+export default function WeatherRecommendation({ menuItems, onAddToCart }: RecommendationProps) {
   const { t, language } = useLanguage();
   const [temperature, setTemperature] = useState<number | null>(null);
   const [recommendedItem, setRecommendedItem] = useState<any>(null);
@@ -24,21 +25,48 @@ export default function WeatherRecommendation({ menuItems }: RecommendationProps
   useEffect(() => {
     if (temperature === null || menuItems.length === 0) return;
 
-    const isWarm = temperature >= 65;
+    const isCold = temperature < 60;
+    const isHot = temperature >= 75;
     let item;
 
-    if (isWarm) {
-      const drinks = menuItems.filter(i => {
+    if (isCold) {
+      // Cold weather: recommend hot drinks or snacks
+      const hotDrinks = menuItems.filter(i => {
         const cat = (i.category || '').toLowerCase();
-        return cat.includes('tea') || cat.includes('drink');
+        const name = (i.name || '').toLowerCase();
+        return (cat.includes('milk tea') || cat.includes('specialty')) &&
+          (name.includes('hot') || name.includes('taro') || name.includes('matcha'));
       });
-      item = drinks.length > 0 ? drinks[0] : menuItems[0];
-    } else {
+
       const snacks = menuItems.filter(i => {
         const cat = (i.category || '').toLowerCase();
         return cat.includes('snack') || cat.includes('dessert');
       });
-      item = snacks.length > 0 ? snacks[0] : menuItems[0];
+
+      // Prefer hot drinks, fallback to snacks
+      if (hotDrinks.length > 0) {
+        item = hotDrinks[Math.floor(Math.random() * hotDrinks.length)];
+      } else if (snacks.length > 0) {
+        item = snacks[Math.floor(Math.random() * snacks.length)];
+      } else {
+        item = menuItems[0];
+      }
+    } else if (isHot) {
+      // Hot weather: recommend cold drinks
+      const coldDrinks = menuItems.filter(i => {
+        const cat = (i.category || '').toLowerCase();
+        const name = (i.name || '').toLowerCase();
+        return (cat.includes('fruit tea') || cat.includes('smoothie') || cat.includes('seasonal')) &&
+          !name.includes('hot');
+      });
+      item = coldDrinks.length > 0 ? coldDrinks[Math.floor(Math.random() * coldDrinks.length)] : menuItems[0];
+    } else {
+      // Mild weather: any drink
+      const drinks = menuItems.filter(i => {
+        const cat = (i.category || '').toLowerCase();
+        return cat.includes('tea') || cat.includes('drink') || cat.includes('smoothie');
+      });
+      item = drinks.length > 0 ? drinks[Math.floor(Math.random() * drinks.length)] : menuItems[0];
     }
 
     setRecommendedItem(item);
@@ -48,22 +76,55 @@ export default function WeatherRecommendation({ menuItems }: RecommendationProps
     return null;
   }
 
+  // Generate dynamic message based on temperature
+  const getWeatherMessage = () => {
+    if (temperature < 50) {
+      return "Brrr! It's freezing! Warm up with";
+    } else if (temperature < 60) {
+      return "Wow, it's chilly! Warm up with";
+    } else if (temperature >= 85) {
+      return "It's scorching! Cool down with";
+    } else if (temperature >= 75) {
+      return "It's hot out there! Refresh yourself with";
+    } else {
+      return "Perfect weather for";
+    }
+  };
+
+  const handleAdd = () => {
+    if (onAddToCart && recommendedItem) {
+      onAddToCart({ ...recommendedItem, quantity: 1 });
+    }
+  };
+
   return (
-    <aside className="fixed left-4 bottom-4 w-56 rounded border border-gray-200 dark:border-gray-600 bg-white dark:bg-zinc-800 p-3 shadow-lg text-black dark:text-white transition-colors z-40" aria-label="Weather recommendation">
-      <h3 className="text-base font-semibold mb-2">{t('Recommendation')}</h3>
-      
-      <div className="mb-2">
-        <span className="text-xl font-bold">{temperature}°F</span>
+    <aside className="w-64 rounded-lg border border-gray-200 dark:border-gray-600 bg-gradient-to-br from-white to-gray-50 dark:from-zinc-800 dark:to-zinc-900 p-4 shadow-xl text-black dark:text-white transition-all hover:shadow-2xl" aria-label="Weather recommendation">
+      <div className="flex items-center justify-between mb-3">
+        <h3 className="text-sm font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide">{t('Recommendation')}</h3>
+        <span className="text-2xl font-bold text-blue-600 dark:text-blue-400">{temperature}°F</span>
       </div>
-      
-      <div className="bg-gray-50 dark:bg-zinc-700 rounded p-2">
-        <div className="font-medium text-sm mb-1">
+
+      <p className="text-sm text-gray-600 dark:text-gray-300 mb-3 leading-relaxed">
+        {getWeatherMessage()}
+      </p>
+
+      <div className="bg-white dark:bg-zinc-700 rounded-lg p-3 shadow-sm border border-gray-100 dark:border-zinc-600 mb-3">
+        <div className="font-semibold text-base mb-1">
           {translateMenuItem(recommendedItem.name, language)}
         </div>
-        <div className="text-xs text-gray-600 dark:text-gray-300">
+        <div className="text-sm font-bold text-green-600 dark:text-green-400">
           ${recommendedItem.price.toFixed(2)}
         </div>
       </div>
+
+      {onAddToCart && (
+        <button
+          onClick={handleAdd}
+          className="w-full py-2 px-4 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-colors shadow-md hover:shadow-lg active:scale-95 transform"
+        >
+          {t('Add to Cart')}
+        </button>
+      )}
     </aside>
   );
 }

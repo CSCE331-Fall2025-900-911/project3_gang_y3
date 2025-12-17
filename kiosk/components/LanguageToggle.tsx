@@ -13,7 +13,7 @@ export default function LanguageToggle() {
   if (!mounted) {
     return (
       <button
-        className="fixed top-4 right-20 z-50 px-4 py-3 rounded-full bg-gray-200 dark:bg-gray-700 transition-colors shadow-lg"
+        className="px-4 py-3 rounded-full bg-gray-200 dark:bg-gray-700 transition-colors shadow-lg"
         aria-label="Toggle language"
         disabled
       >
@@ -25,7 +25,7 @@ export default function LanguageToggle() {
   return (
     <button
       onClick={toggleLanguage}
-      className="fixed top-4 right-20 z-50 px-4 py-3 rounded-full bg-blue-700 hover:bg-blue-800 dark:bg-blue-700 dark:hover:bg-blue-800 transition-colors shadow-lg"
+      className="px-4 py-3 rounded-full bg-blue-700 hover:bg-blue-800 dark:bg-blue-700 dark:hover:bg-blue-800 transition-colors shadow-lg"
       aria-label="Toggle language"
     >
       <span className="font-semibold text-white">

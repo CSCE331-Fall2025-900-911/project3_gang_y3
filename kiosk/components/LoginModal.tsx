@@ -49,13 +49,6 @@ export default function LoginModal({ role, onClose }: LoginModalProps) {
         
         // Close modal first
         onClose();
-        
-        // Navigate to the appropriate page
-        if (role === 'Manager') {
-          router.push('/manager');
-        } else {
-          router.push('/cashier');
-        }
       } else {
         setError(data.error || 'Login failed');
       }

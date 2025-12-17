@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Geist, Geist_Mono, Poppins, Inter } from "next/font/google";
 import "./globals.css";
 import "./magnifier.css";
 import { ThemeProvider } from "../components/ThemeProvider";
@@ -22,6 +22,19 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+const inter = Inter({
+  subsets: ['latin'],
+  variable: '--font-inter',
+  display: 'swap',
+});
+
+const poppins = Poppins({
+  weight: ['400', '500', '600', '700', '800'],
+  subsets: ['latin'],
+  variable: '--font-poppins',
+  display: 'swap',
+});
+
 export const metadata: Metadata = {
   title: "Kiosk - Place an Order",
   description: "Boba tea kiosk ordering system",
@@ -35,7 +48,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} ${inter.variable} ${poppins.variable} antialiased`}
       >
         <AuthProvider>
           <ThemeProvider>
@@ -44,10 +57,11 @@ export default function RootLayout({
                 Skip to main content
               </a>
               <header role="banner">
-                <NavigationMenu />
-                <ThemeToggle />
-                <LanguageToggle />
-                <MagnifierToggle />
+                <div className="fixed top-4 right-4 z-50 flex items-center gap-2">
+                  <MagnifierToggle />
+                  <LanguageToggle />
+                  <ThemeToggle />
+                </div>
               </header>
               <main id="main-content">
                 {children}

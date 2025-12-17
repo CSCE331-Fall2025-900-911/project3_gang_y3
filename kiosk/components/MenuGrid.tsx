@@ -15,9 +15,9 @@ const TOPPING_PRICE = 0.50;
 // Customization types: 'full' = all options, 'drink' = size/sugar/toppings (no temp/ice), 'quantity' = just quantity
 type CustomizationType = 'full' | 'drink' | 'quantity' | null;
 
-export default function MenuGrid({ items }: { items: Item[] }) {
+export default function MenuGrid({ items, customerId, cartState, onPointsUpdate, onQuickOrderSaved }: { items: Item[]; customerId?: number; cartState: [CartItem[], React.Dispatch<React.SetStateAction<CartItem[]>>]; onPointsUpdate?: (points: number) => void; onQuickOrderSaved?: () => void }) {
   const { t, language } = useLanguage();
-  const [cart, setCart] = useState<CartItem[]>([]);
+  const [cart, setCart] = cartState;
   const [customizing, setCustomizing] = useState<Item | null>(null);
   const [customType, setCustomType] = useState<CustomizationType>(null);
   const [quantity, setQuantity] = useState(1);
@@ -55,14 +55,14 @@ export default function MenuGrid({ items }: { items: Item[] }) {
 
   function requestAdd(it: Item) {
     const cat = (it.category || '').toString().trim().toLowerCase();
-    
+
     // Full customization: milk tea, fruit tea, specialty drinks (size, temp, ice, sugar, toppings)
     const fullCustom = ['milk tea', 'fruit tea', 'specialty drinks', 'specialty'];
     // Drink customization: seasonal, smoothies (size, sugar, toppings - no temp/ice)
     const drinkCustom = ['seasonal', 'smoothies', 'smoothie'];
     // Quantity only: snacks/desserts
     const quantityOnly = ['snacks', 'desserts', 'snacks/desserts'];
-    
+
     const isFullCustom = fullCustom.includes(cat) || fullCustom.some((c) => cat.includes(c));
     const isDrinkCustom = drinkCustom.includes(cat) || drinkCustom.some((c) => cat.includes(c));
     const isQuantityOnly = quantityOnly.includes(cat) || quantityOnly.some((c) => cat.includes(c));
@@ -97,9 +97,9 @@ export default function MenuGrid({ items }: { items: Item[] }) {
 
   function confirmAdd() {
     if (!customizing) return;
-    
+
     let newItem: CartItem;
-    
+
     if (customType === 'quantity') {
       // Snacks - just quantity, no customization
       newItem = { ...customizing, id: customizing.id, quantity };
@@ -107,12 +107,12 @@ export default function MenuGrid({ items }: { items: Item[] }) {
       // Seasonal/Smoothies - size, sugar, toppings (no temp/ice)
       const sizeUpcharge = SIZE_PRICES[size];
       const toppingsUpcharge = selectedToppings.length * TOPPING_PRICE;
-      newItem = { 
+      newItem = {
         ...customizing,
         id: customizing.id,
         price: customizing.price + sizeUpcharge + toppingsUpcharge,
         quantity,
-        custom: { size, temperature: 'cold', ice: 'medium', sugar, toppings: selectedToppings.length > 0 ? selectedToppings : undefined } 
+        custom: { size, temperature: 'cold', ice: 'medium', sugar, toppings: selectedToppings.length > 0 ? selectedToppings : undefined }
       };
     } else if (customType === 'full') {
       // Full customization
@@ -129,7 +129,7 @@ export default function MenuGrid({ items }: { items: Item[] }) {
       // Fallback: just add with id
       newItem = { ...customizing, id: customizing.id, quantity };
     }
-    
+
     setCart((s) => [...s, newItem]);
     setAddedMessage(`${customizing.name} added to cart!`);
     setTimeout(() => setAddedMessage(null), 1500);
@@ -138,21 +138,31 @@ export default function MenuGrid({ items }: { items: Item[] }) {
   }
 
   const toggleTopping = (toppingId: number) => {
-    setSelectedToppings(prev => 
-      prev.includes(toppingId) 
+    setSelectedToppings(prev =>
+      prev.includes(toppingId)
         ? prev.filter(id => id !== toppingId)
         : [...prev, toppingId]
     );
   };
 
   const updateItemQuantity = (index: number, delta: number) => {
-    setCart(prev => prev.map((item, i) => {
-      if (i === index) {
-        const newQty = Math.max(1, item.quantity + delta);
-        return { ...item, quantity: newQty };
+    setCart(prev => {
+      const item = prev[index];
+      const newQty = item.quantity + delta;
+
+      // If quantity would be 0 or less, remove the item
+      if (newQty <= 0) {
+        return prev.filter((_, i) => i !== index);
       }
-      return item;
-    }));
+
+      // Otherwise update the quantity
+      return prev.map((item, i) => {
+        if (i === index) {
+          return { ...item, quantity: newQty };
+        }
+        return item;
+      });
+    });
   };
 
   function cancelAdd() {
@@ -183,7 +193,7 @@ export default function MenuGrid({ items }: { items: Item[] }) {
         ))}
       </div>
 
-      <Cart items={cart} onClear={clearCart} onRemove={removeItem} onUpdateQuantity={updateItemQuantity} />
+      <Cart items={cart} customerId={customerId} onClear={clearCart} onRemove={removeItem} onUpdateQuantity={updateItemQuantity} onPointsUpdate={onPointsUpdate} onQuickOrderSaved={onQuickOrderSaved} />
 
       {customizing && (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
