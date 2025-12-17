@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { signIn } from 'next-auth/react';
+import { useLanguage } from '../components/LanguageProvider';
 
 interface LoginModalProps {
   role: 'Manager' | 'Cashier';
@@ -10,6 +11,7 @@ interface LoginModalProps {
 }
 
 export default function LoginModal({ role, onClose }: LoginModalProps) {
+  const { t } = useLanguage();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -46,14 +48,14 @@ export default function LoginModal({ role, onClose }: LoginModalProps) {
         // Store auth info in sessionStorage
         sessionStorage.setItem('userRole', data.role);
         sessionStorage.setItem('username', data.username);
-        
+
         // Close modal first
         onClose();
       } else {
-        setError(data.error || 'Login failed');
+        setError(data.error || t('Login failed'));
       }
     } catch {
-      setError('Network error. Please try again.');
+      setError(t('Network error. Please try again.'));
     } finally {
       setLoading(false);
     }
@@ -67,7 +69,7 @@ export default function LoginModal({ role, onClose }: LoginModalProps) {
 
   const verifyAndSignIn = async () => {
     if (!googleEmail) {
-      setError('Please enter your Google email');
+      setError(t('Please enter your Google email'));
       return;
     }
 
@@ -86,27 +88,27 @@ export default function LoginModal({ role, onClose }: LoginModalProps) {
       const verifyData = await verifyResponse.json();
 
       if (!verifyData.authorized) {
-        setError(verifyData.error || 'Not authorized');
+        setError(verifyData.error || t('Not authorized'));
         setGoogleLoading(false);
         return;
       }
 
       // Email is authorized, show success and proceed with OAuth
-      setSuccess(`✓ Authorized as ${verifyData.role}! Redirecting to Google...`);
-      
+      setSuccess(`✓ ${t('Authorized as')} ${verifyData.role}! ${t('Redirecting to Google...')}`);
+
       // Store the role for after OAuth
       sessionStorage.setItem('pendingRole', verifyData.role);
       sessionStorage.setItem('pendingUsername', verifyData.username);
-      
+
       // Small delay to show success message
       setTimeout(async () => {
-        await signIn('google', { 
+        await signIn('google', {
           callbackUrl: verifyData.role === 'Manager' ? '/manager' : '/cashier'
         });
       }, 1000);
 
     } catch {
-      setError('Failed to verify email. Please try again.');
+      setError(t('Failed to verify email. Please try again.'));
       setGoogleLoading(false);
     }
   };
@@ -123,17 +125,17 @@ export default function LoginModal({ role, onClose }: LoginModalProps) {
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       <div className="absolute inset-0 bg-black/50" onClick={onClose}></div>
       <div className="relative z-10 w-[90%] max-w-md rounded-lg bg-white dark:bg-zinc-800 p-8 shadow-xl text-black dark:text-white transition-colors">
-        <h2 className="text-2xl font-bold mb-2">{role} Login</h2>
+        <h2 className="text-2xl font-bold mb-2">{role} {t("Login")}</h2>
         <p className="text-sm text-gray-600 dark:text-gray-400 mb-6">
-          Sign in as {role}
+          {t("Sign in as")} {role}
         </p>
 
         {/* Email verification prompt for Google Sign In */}
         {showEmailPrompt ? (
           <div className="mb-4 p-4 border border-blue-300 dark:border-blue-600 rounded bg-blue-50 dark:bg-blue-900/30">
-            <h3 className="font-medium mb-2">Verify your Google email</h3>
+            <h3 className="font-medium mb-2">{t("Verify your Google email")}</h3>
             <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
-              Enter your Google email to check authorization
+              {t("Enter your Google email to check authorization")}
             </p>
             <input
               type="email"
@@ -143,33 +145,33 @@ export default function LoginModal({ role, onClose }: LoginModalProps) {
               className="w-full px-4 py-2 mb-3 border border-gray-300 dark:border-zinc-600 rounded bg-white dark:bg-zinc-700 text-black dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
               disabled={googleLoading}
             />
-            
+
             {error && (
               <div className="mb-3 p-3 rounded bg-red-50 dark:bg-red-900/30 border border-red-300 dark:border-red-700 text-red-800 dark:text-red-300 text-sm">
                 ✕ {error}
               </div>
             )}
-            
+
             {success && (
               <div className="mb-3 p-3 rounded bg-green-50 dark:bg-green-900/30 border border-green-300 dark:border-green-700 text-green-800 dark:text-green-300 text-sm">
                 {success}
               </div>
             )}
-            
+
             <div className="flex gap-2">
               <button
                 onClick={verifyAndSignIn}
                 disabled={googleLoading || !googleEmail}
                 className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-medium rounded transition-colors"
               >
-                {googleLoading ? 'Verifying...' : 'Verify & Sign In'}
+                {googleLoading ? t('Verifying...') : t('Verify & Sign In')}
               </button>
               <button
                 onClick={cancelEmailPrompt}
                 disabled={googleLoading}
                 className="px-4 py-2 bg-gray-200 hover:bg-gray-300 dark:bg-zinc-700 dark:hover:bg-zinc-600 text-black dark:text-white font-medium rounded transition-colors"
               >
-                Cancel
+                {t("Cancel")}
               </button>
             </div>
           </div>
@@ -200,7 +202,7 @@ export default function LoginModal({ role, onClose }: LoginModalProps) {
               />
             </svg>
             <span className="font-medium">
-              {googleLoading ? 'Redirecting...' : 'Sign in with Google'}
+              {googleLoading ? t('Redirecting...') : t('Sign in with Google')}
             </span>
           </button>
         )}
@@ -212,7 +214,7 @@ export default function LoginModal({ role, onClose }: LoginModalProps) {
           </div>
           <div className="relative flex justify-center text-sm">
             <span className="px-2 bg-white dark:bg-zinc-800 text-gray-500 dark:text-gray-400">
-              or continue with username
+              {t("or continue with username")}
             </span>
           </div>
         </div>
@@ -220,7 +222,7 @@ export default function LoginModal({ role, onClose }: LoginModalProps) {
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label htmlFor="username" className="block text-sm font-medium mb-2">
-              Username
+              {t("Username")}
             </label>
             <input
               id="username"
@@ -228,14 +230,14 @@ export default function LoginModal({ role, onClose }: LoginModalProps) {
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               className="w-full px-4 py-2 border border-gray-300 dark:border-zinc-600 rounded bg-white dark:bg-zinc-700 text-black dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="Enter username"
+              placeholder={t("Enter username")}
               required
             />
           </div>
 
           <div>
             <label htmlFor="password" className="block text-sm font-medium mb-2">
-              Password
+              {t("Password")}
             </label>
             <input
               id="password"
@@ -243,7 +245,7 @@ export default function LoginModal({ role, onClose }: LoginModalProps) {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               className="w-full px-4 py-2 border border-gray-300 dark:border-zinc-600 rounded bg-white dark:bg-zinc-700 text-black dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="Enter password"
+              placeholder={t("Enter password")}
               required
             />
           </div>
@@ -260,14 +262,14 @@ export default function LoginModal({ role, onClose }: LoginModalProps) {
               disabled={loading}
               className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-medium rounded transition-colors"
             >
-              {loading ? 'Signing in...' : 'Sign In'}
+              {loading ? t('Signing in...') : t('Sign In')}
             </button>
             <button
               type="button"
               onClick={onClose}
               className="flex-1 px-4 py-2 bg-gray-200 hover:bg-gray-300 dark:bg-zinc-700 dark:hover:bg-zinc-600 text-black dark:text-white font-medium rounded transition-colors"
             >
-              Cancel
+              {t("Cancel")}
             </button>
           </div>
         </form>

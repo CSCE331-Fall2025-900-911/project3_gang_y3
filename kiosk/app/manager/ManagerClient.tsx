@@ -357,25 +357,25 @@ export default function ManagerClient({ initialData }: ManagerClientProps) {
         <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
           {/* Product Usage Chart Widget */}
           <div className="bg-white dark:bg-zinc-800 p-6 rounded shadow flex flex-col gap-4" style={{ minHeight: '400px' }}>
-            <h2 className="text-xl font-semibold mb-2">Product Usage Chart</h2>
-            <div className="mb-1 text-sm text-gray-600 dark:text-gray-300">Select a time window to view inventory usage.</div>
+            <h2 className="text-xl font-semibold mb-2">{t("Product Usage Chart")}</h2>
+            <div className="mb-1 text-sm text-gray-600 dark:text-gray-300">{t("Select a time window to view inventory usage.")}</div>
             <div className="flex flex-col gap-2 mb-2 w-full max-w-xs">
-              <label className="text-xs font-medium">Start Date & Time</label>
+              <label className="text-xs font-medium">{t("Start Date & Time")}</label>
               <input type="datetime-local" value={usageStart} onChange={e => setUsageStart(e.target.value)} className="px-2 py-1 rounded border w-full" />
-              <label className="text-xs font-medium">End Date & Time</label>
+              <label className="text-xs font-medium">{t("End Date & Time")}</label>
               <input type="datetime-local" value={usageEnd} onChange={e => setUsageEnd(e.target.value)} className="px-2 py-1 rounded border w-full" />
-              <button className="mt-2 px-3 py-2 rounded bg-blue-500 hover:bg-blue-600 text-white font-semibold transition-colors" onClick={fetchUsageData} disabled={loadingUsage || !usageStart || !usageEnd}>Generate Usage Table</button>
+              <button className="mt-2 px-3 py-2 rounded bg-blue-500 hover:bg-blue-600 text-white font-semibold transition-colors" onClick={fetchUsageData} disabled={loadingUsage || !usageStart || !usageEnd}>{t("Generate Usage Table")}</button>
             </div>
             {loadingUsage ? (
-              <div className="text-center py-8">Loading...</div>
+              <div className="text-center py-8">{t("Loading...")}</div>
             ) : usageData.length > 0 ? (
               <div className="overflow-y-auto max-h-56 border rounded">
                 <table className="w-full text-sm">
                   <thead className="sticky top-0 bg-gray-100 dark:bg-zinc-700">
                     <tr>
-                      <th className="p-2 text-left">Inventory Item</th>
-                      <th className="p-2 text-left">Amount Used</th>
-                      <th className="p-2 text-left">Unit</th>
+                      <th className="p-2 text-left">{t("Inventory Item")}</th>
+                      <th className="p-2 text-left">{t("Amount Used")}</th>
+                      <th className="p-2 text-left">{t("Unit")}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -390,27 +390,27 @@ export default function ManagerClient({ initialData }: ManagerClientProps) {
                 </table>
               </div>
             ) : (
-              <div className="text-center py-8 text-gray-500">No usage data for selected period.</div>
+              <div className="text-center py-8 text-gray-500">{t("No usage data for selected period.")}</div>
             )}
           </div>
           {/* X-Report Widget */}
           <div className="bg-white dark:bg-zinc-800 p-6 rounded shadow xl:col-span-2">
-            <h2 className="text-xl font-semibold mb-4">X-Report</h2>
-            <div className="mb-2 text-sm text-gray-600 dark:text-gray-300">Sales activities per hour for today</div>
+            <h2 className="text-xl font-semibold mb-4">{t("X-Report")}</h2>
+            <div className="mb-2 text-sm text-gray-600 dark:text-gray-300">{t("Sales activities per hour for today")}</div>
 
             {/* Hourly Data Line Graph */}
             <div className="mb-4 p-4 bg-gray-50 dark:bg-zinc-700/50 rounded-lg">
               <div className="flex items-center justify-between mb-3">
-                <h3 className="font-semibold text-gray-700 dark:text-gray-200">Hourly Data Today</h3>
+                <h3 className="font-semibold text-gray-700 dark:text-gray-200">{t("Hourly Data Today")}</h3>
                 <select
                   value={chartMetric}
                   onChange={(e) => setChartMetric(e.target.value as 'sales' | 'voids' | 'cash' | 'card')}
                   className="px-3 py-1.5 rounded-lg border border-gray-300 dark:border-zinc-600 bg-white dark:bg-zinc-700 text-sm font-medium"
                 >
-                  <option value="sales">Sales</option>
-                  <option value="voids">Voids</option>
-                  <option value="cash">Cash</option>
-                  <option value="card">Card</option>
+                  <option value="sales">{t("Sales")}</option>
+                  <option value="voids">{t("Voids")}</option>
+                  <option value="cash">{t("Cash")}</option>
+                  <option value="card">{t("Card")}</option>
                 </select>
               </div>
               <div className="relative">
@@ -501,17 +501,17 @@ export default function ManagerClient({ initialData }: ManagerClientProps) {
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <div className="text-center p-4 bg-green-50 dark:bg-green-900/20 rounded-lg">
                 <div className="text-3xl font-bold text-green-600 dark:text-green-400">{paymentBreakdown.cash.count}</div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">Cash Orders</div>
+                <div className="text-sm text-gray-600 dark:text-gray-400">{t("Cash Orders")}</div>
                 <div className="text-lg font-semibold text-green-600 dark:text-green-400">${paymentBreakdown.cash.total.toFixed(2)}</div>
               </div>
               <div className="text-center p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
                 <div className="text-3xl font-bold text-blue-600 dark:text-blue-400">{paymentBreakdown.card.count}</div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">Card Orders</div>
+                <div className="text-sm text-gray-600 dark:text-gray-400">{t("Card Orders")}</div>
                 <div className="text-lg font-semibold text-blue-600 dark:text-blue-400">${paymentBreakdown.card.total.toFixed(2)}</div>
               </div>
               <div className="text-center p-4 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
                 <div className="text-3xl font-bold text-purple-600 dark:text-purple-400">{totalOrdersToday}</div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">Total Orders</div>
+                <div className="text-sm text-gray-600 dark:text-gray-400">{t("Total Orders")}</div>
                 <div className="text-lg font-semibold text-purple-600 dark:text-purple-400">${salesData?.today.toFixed(2)}</div>
               </div>
               <div className="text-center p-4 bg-orange-50 dark:bg-orange-900/20 rounded-lg">
@@ -521,12 +521,12 @@ export default function ManagerClient({ initialData }: ManagerClientProps) {
                     return total > 0 ? Math.round((paymentBreakdown.card.count / total) * 100) : 0;
                   })()}%
                 </div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">Card Usage</div>
+                <div className="text-sm text-gray-600 dark:text-gray-400">{t("Card Usage")}</div>
                 <div className="text-lg font-semibold text-orange-600 dark:text-orange-400">
                   {(() => {
                     const total = paymentBreakdown.cash.count + paymentBreakdown.card.count;
                     return total > 0 ? Math.round((paymentBreakdown.cash.count / total) * 100) : 0;
-                  })()}% Cash
+                  })()}% {t("Cash")}
                 </div>
               </div>
             </div>
@@ -536,11 +536,11 @@ export default function ManagerClient({ initialData }: ManagerClientProps) {
           <div className="bg-white dark:bg-zinc-800 p-6 rounded shadow xl:col-span-2">
             <div className="flex items-center justify-between mb-4">
               <div>
-                <h2 className="text-xl font-semibold">Z-Report</h2>
-                <div className="text-sm text-gray-600 dark:text-gray-300">End-of-day summary and reset</div>
+                <h2 className="text-xl font-semibold">{t("Z-Report")}</h2>
+                <div className="text-sm text-gray-600 dark:text-gray-300">{t("End-of-day summary and reset")}</div>
               </div>
               <div className="text-right">
-                <div className="text-xs text-gray-500">Report Date</div>
+                <div className="text-xs text-gray-500">{t("Report Date")}</div>
                 <div className="font-semibold">{new Date().toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })}</div>
               </div>
             </div>
@@ -549,23 +549,23 @@ export default function ManagerClient({ initialData }: ManagerClientProps) {
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
               <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg text-center">
                 <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">${salesData?.today.toFixed(2)}</div>
-                <div className="text-xs text-gray-600 dark:text-gray-400">Gross Sales</div>
+                <div className="text-xs text-gray-600 dark:text-gray-400">{t("Gross Sales")}</div>
               </div>
               <div className="p-3 bg-green-50 dark:bg-green-900/20 rounded-lg text-center">
                 <div className="text-2xl font-bold text-green-600 dark:text-green-400">{totalOrdersToday}</div>
-                <div className="text-xs text-gray-600 dark:text-gray-400">Total Orders</div>
+                <div className="text-xs text-gray-600 dark:text-gray-400">{t("Total Orders")}</div>
               </div>
               <div className="p-3 bg-red-50 dark:bg-red-900/20 rounded-lg text-center">
                 <div className="text-2xl font-bold text-red-600 dark:text-red-400">
                   {salesData?.hourly?.reduce((sum, h) => sum + h.voids, 0) || 0}
                 </div>
-                <div className="text-xs text-gray-600 dark:text-gray-400">Voided Orders</div>
+                <div className="text-xs text-gray-600 dark:text-gray-400">{t("Voided Orders")}</div>
               </div>
               <div className="p-3 bg-purple-50 dark:bg-purple-900/20 rounded-lg text-center">
                 <div className="text-2xl font-bold text-purple-600 dark:text-purple-400">
                   ${totalOrdersToday > 0 ? (salesData?.today / totalOrdersToday).toFixed(2) : '0.00'}
                 </div>
-                <div className="text-xs text-gray-600 dark:text-gray-400">Avg Order Value</div>
+                <div className="text-xs text-gray-600 dark:text-gray-400">{t("Avg Order Value")}</div>
               </div>
             </div>
 
@@ -573,31 +573,31 @@ export default function ManagerClient({ initialData }: ManagerClientProps) {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
               {/* Payment Breakdown */}
               <div className="p-4 bg-gray-50 dark:bg-zinc-700/50 rounded-lg">
-                <h4 className="font-semibold mb-3 text-sm">Payment Breakdown</h4>
+                <h4 className="font-semibold mb-3 text-sm">{t("Payment Breakdown")}</h4>
                 <div className="space-y-2">
                   <div className="flex justify-between items-center">
                     <div className="flex items-center gap-2">
                       <div className="w-3 h-3 bg-green-500 rounded"></div>
-                      <span className="text-sm">Cash</span>
+                      <span className="text-sm">{t("Cash")}</span>
                     </div>
                     <div className="text-right">
                       <span className="font-semibold">${paymentBreakdown.cash.total.toFixed(2)}</span>
-                      <span className="text-xs text-gray-500 ml-2">({paymentBreakdown.cash.count} orders)</span>
+                      <span className="text-xs text-gray-500 ml-2">({paymentBreakdown.cash.count} {t("orders")})</span>
                     </div>
                   </div>
                   <div className="flex justify-between items-center">
                     <div className="flex items-center gap-2">
                       <div className="w-3 h-3 bg-blue-500 rounded"></div>
-                      <span className="text-sm">Card</span>
+                      <span className="text-sm">{t("Card")}</span>
                     </div>
                     <div className="text-right">
                       <span className="font-semibold">${paymentBreakdown.card.total.toFixed(2)}</span>
-                      <span className="text-xs text-gray-500 ml-2">({paymentBreakdown.card.count} orders)</span>
+                      <span className="text-xs text-gray-500 ml-2">({paymentBreakdown.card.count} {t("orders")})</span>
                     </div>
                   </div>
                   <hr className="border-gray-200 dark:border-zinc-600 my-2" />
                   <div className="flex justify-between items-center font-semibold">
-                    <span>Total</span>
+                    <span>{t("Total")}</span>
                     <span>${(paymentBreakdown.cash.total + paymentBreakdown.card.total).toFixed(2)}</span>
                   </div>
                 </div>
@@ -605,28 +605,28 @@ export default function ManagerClient({ initialData }: ManagerClientProps) {
 
               {/* Inventory Alerts */}
               <div className="p-4 bg-gray-50 dark:bg-zinc-700/50 rounded-lg">
-                <h4 className="font-semibold mb-3 text-sm">Inventory Status</h4>
+                <h4 className="font-semibold mb-3 text-sm">{t("Inventory Status")}</h4>
                 <div className="space-y-2">
                   <div className="flex justify-between items-center">
-                    <span className="text-sm">Out of Stock Items</span>
+                    <span className="text-sm">{t("Out of Stock Items")}</span>
                     <span className={`font-semibold ${menuItems.filter(item => item.availability === false).length > 0 ? 'text-red-600' : 'text-green-600'}`}>
                       {menuItems.filter(item => item.availability === false).length}
                     </span>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span className="text-sm">Low Stock Items</span>
+                    <span className="text-sm">{t("Low Stock Items")}</span>
                     <span className={`font-semibold ${redThresholdCount > 0 ? 'text-orange-600' : 'text-green-600'}`}>
                       {redThresholdCount}
                     </span>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span className="text-sm">Inventory Updates Today</span>
+                    <span className="text-sm">{t("Inventory Updates Today")}</span>
                     <span className="font-semibold">{inventoryUpdateCount}</span>
                   </div>
                 </div>
                 {lowStockItems.length > 0 && (
                   <div className="mt-3 pt-3 border-t border-gray-200 dark:border-zinc-600">
-                    <div className="text-xs text-gray-500 mb-1">Low Stock Items:</div>
+                    <div className="text-xs text-gray-500 mb-1">{t("Low Stock Items")}:</div>
                     <div className="text-xs space-y-0.5">
                       {lowStockItems.slice(0, 3).map((item, idx) => (
                         <div key={idx} className="text-orange-600 dark:text-orange-400">
@@ -634,7 +634,7 @@ export default function ManagerClient({ initialData }: ManagerClientProps) {
                         </div>
                       ))}
                       {lowStockItems.length > 3 && (
-                        <div className="text-gray-500">+{lowStockItems.length - 3} more...</div>
+                        <div className="text-gray-500">+{lowStockItems.length - 3} {t("more...")}</div>
                       )}
                     </div>
                   </div>
@@ -647,7 +647,7 @@ export default function ManagerClient({ initialData }: ManagerClientProps) {
               className="w-full py-3 rounded-lg bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white font-semibold transition-all shadow-lg hover:shadow-xl"
               onClick={handleRunZReport}
             >
-              Run Z-Report
+              {t("Run Z-Report")}
             </button>
 
             {/* Z-Report Modal */}
@@ -657,37 +657,37 @@ export default function ManagerClient({ initialData }: ManagerClientProps) {
                 <div className="relative z-10 w-[95%] max-w-2xl rounded-xl bg-white dark:bg-zinc-800 shadow-2xl text-black dark:text-white overflow-hidden">
                   {/* Header */}
                   <div className="bg-gradient-to-r from-red-500 to-red-600 p-4 text-white">
-                    <h3 className="text-xl font-bold">End of Day Z-Report</h3>
+                    <h3 className="text-xl font-bold">{t("End of Day Z-Report")}</h3>
                     <p className="text-sm opacity-90">{new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}</p>
                   </div>
 
                   <div className="p-6 max-h-[60vh] overflow-y-auto">
                     {/* Financial Summary */}
                     <div className="mb-6">
-                      <h4 className="font-semibold mb-3 text-gray-700 dark:text-gray-200">Financial Summary</h4>
+                      <h4 className="font-semibold mb-3 text-gray-700 dark:text-gray-200">{t("Financial Summary")}</h4>
                       <div className="bg-gray-50 dark:bg-zinc-700/50 rounded-lg p-4">
                         <div className="grid grid-cols-2 gap-4">
                           <div>
                             <div className="text-3xl font-bold text-green-600 dark:text-green-400">${salesData?.today.toFixed(2)}</div>
-                            <div className="text-sm text-gray-500">Gross Sales</div>
+                            <div className="text-sm text-gray-500">{t("Gross Sales")}</div>
                           </div>
                           <div className="text-right">
                             <div className="text-3xl font-bold">{totalOrdersToday}</div>
-                            <div className="text-sm text-gray-500">Orders Processed</div>
+                            <div className="text-sm text-gray-500">{t("Orders Processed")}</div>
                           </div>
                         </div>
                         <hr className="my-4 border-gray-200 dark:border-zinc-600" />
                         <div className="space-y-2 text-sm">
                           <div className="flex justify-between">
-                            <span>Cash Payments</span>
+                            <span>{t("Cash Payments")}</span>
                             <span className="font-semibold">${paymentBreakdown.cash.total.toFixed(2)} ({paymentBreakdown.cash.count})</span>
                           </div>
                           <div className="flex justify-between">
-                            <span>Card Payments</span>
+                            <span>{t("Card Payments")}</span>
                             <span className="font-semibold">${paymentBreakdown.card.total.toFixed(2)} ({paymentBreakdown.card.count})</span>
                           </div>
                           <div className="flex justify-between">
-                            <span>Voided Orders</span>
+                            <span>{t("Voided Orders")}</span>
                             <span className="font-semibold text-red-600">{salesData?.hourly?.reduce((sum, h) => sum + h.voids, 0) || 0}</span>
                           </div>
                         </div>
@@ -696,22 +696,22 @@ export default function ManagerClient({ initialData }: ManagerClientProps) {
 
                     {/* Inventory Status */}
                     <div className="mb-6">
-                      <h4 className="font-semibold mb-3 text-gray-700 dark:text-gray-200">Inventory Status</h4>
+                      <h4 className="font-semibold mb-3 text-gray-700 dark:text-gray-200">{t("Inventory Status")}</h4>
                       <div className="bg-gray-50 dark:bg-zinc-700/50 rounded-lg p-4">
                         <div className="grid grid-cols-3 gap-4 text-center">
                           <div>
                             <div className={`text-2xl font-bold ${menuItems.filter(item => item.availability === false).length > 0 ? 'text-red-600' : 'text-green-600'}`}>
                               {menuItems.filter(item => item.availability === false).length}
                             </div>
-                            <div className="text-xs text-gray-500">Out of Stock</div>
+                            <div className="text-xs text-gray-500">{t("Out of Stock")}</div>
                           </div>
                           <div>
                             <div className={`text-2xl font-bold ${redThresholdCount > 0 ? 'text-orange-600' : 'text-green-600'}`}>{redThresholdCount}</div>
-                            <div className="text-xs text-gray-500">Low Stock</div>
+                            <div className="text-xs text-gray-500">{t("Low Stock")}</div>
                           </div>
                           <div>
                             <div className="text-2xl font-bold">{inventoryUpdateCount}</div>
-                            <div className="text-xs text-gray-500">Updates Today</div>
+                            <div className="text-xs text-gray-500">{t("Updates Today")}</div>
                           </div>
                         </div>
                         {lowStockItems.length > 0 && (
@@ -731,10 +731,10 @@ export default function ManagerClient({ initialData }: ManagerClientProps) {
 
                     {/* Best Seller */}
                     <div className="mb-6">
-                      <h4 className="font-semibold mb-3 text-gray-700 dark:text-gray-200">Top Performer</h4>
+                      <h4 className="font-semibold mb-3 text-gray-700 dark:text-gray-200">{t("Top Performer")}</h4>
                       <div className="bg-gradient-to-r from-yellow-50 to-orange-50 dark:from-yellow-900/20 dark:to-orange-900/20 rounded-lg p-4 text-center">
                         <div className="text-lg font-bold">{bestSeller.name}</div>
-                        <div className="text-3xl font-bold text-orange-600 dark:text-orange-400">{bestSeller.sales} sold</div>
+                        <div className="text-3xl font-bold text-orange-600 dark:text-orange-400">{bestSeller.sales} {t("sold")}</div>
                       </div>
                     </div>
                   </div>
@@ -745,13 +745,13 @@ export default function ManagerClient({ initialData }: ManagerClientProps) {
                       className="px-6 py-2 rounded-lg border border-gray-300 dark:border-zinc-600 hover:bg-gray-100 dark:hover:bg-zinc-700 font-medium transition-colors"
                       onClick={() => setShowZReportModal(false)}
                     >
-                      Cancel
+                      {t("Cancel")}
                     </button>
                     <button
                       className="px-6 py-2 rounded-lg bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white font-semibold transition-all shadow-lg"
                       onClick={handleConfirmZReport}
                     >
-                      ✓ Confirm & Close Day
+                      ✓ {t("Confirm & Close Day")}
                     </button>
                   </div>
                 </div>
@@ -1389,6 +1389,6 @@ export default function ManagerClient({ initialData }: ManagerClientProps) {
           </div>
         </div>
       </div>
-    </div>
+    </div >
   );
 }

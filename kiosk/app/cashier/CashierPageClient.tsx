@@ -5,25 +5,15 @@ import { useSession } from "next-auth/react";
 import CashierClient from "./CashierClient";
 import LoginModal from "../../components/LoginModal";
 
-export default function CashierPageClient({ menuItems }: { menuItems: any }) {
-  const [showLogin, setShowLogin] = useState(false);
-  const { data: session } = useSession();
+export default function CashierPageClient({ menuItems, session }: { menuItems: any, session: any }) {
+  // If session exists passed from server, we are logged in.
+  const [showLogin, setShowLogin] = useState(!session?.user);
 
   useEffect(() => {
-    // If NextAuth session exists, we consider them authenticated as Cashier
-    // We check session.user (email might be missing for credentials)
     if (session?.user) {
       sessionStorage.setItem("userRole", "Cashier");
-      if (!sessionStorage.getItem("username")) {
-        const fallbackUsername = session.user.name || session.user.email || "Cashier";
-        sessionStorage.setItem("username", fallbackUsername);
-      }
-      setShowLogin(false);
-    } else if (typeof window !== "undefined") {
-      const role = sessionStorage.getItem("userRole");
-      const username = sessionStorage.getItem("username");
-      // Show login if either role is not Cashier OR username is missing
-      setShowLogin(role !== "Cashier" || !username);
+      const fallbackUsername = session.user.name || session.user.email || "Cashier";
+      sessionStorage.setItem("username", fallbackUsername);
     }
   }, [session]);
 
