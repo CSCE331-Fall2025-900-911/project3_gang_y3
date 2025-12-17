@@ -10,7 +10,8 @@ export default function ManagerPageClient({ initialData }: { initialData: any })
   const { data: session } = useSession();
 
   useEffect(() => {
-    if (session && session.user && session.user.email) {
+    // Check if session exists (email might be missing for credential users)
+    if (session?.user) {
       sessionStorage.setItem("userRole", "Manager");
       setShowLogin(false);
     } else if (typeof window !== "undefined") {

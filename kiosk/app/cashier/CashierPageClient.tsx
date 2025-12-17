@@ -11,8 +11,8 @@ export default function CashierPageClient({ menuItems }: { menuItems: any }) {
 
   useEffect(() => {
     // If NextAuth session exists, we consider them authenticated as Cashier
-    // But we must ensure sessionStorage has the expected values for useAuth
-    if (session && session.user && session.user.email) {
+    // We check session.user (email might be missing for credentials)
+    if (session?.user) {
       sessionStorage.setItem("userRole", "Cashier");
       if (!sessionStorage.getItem("username")) {
         const fallbackUsername = session.user.name || session.user.email || "Cashier";
