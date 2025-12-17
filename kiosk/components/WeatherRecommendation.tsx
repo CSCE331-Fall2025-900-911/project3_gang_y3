@@ -93,7 +93,7 @@ export default function WeatherRecommendation({ menuItems, onAddToCart }: Recomm
 
   const handleAdd = () => {
     if (onAddToCart && recommendedItem) {
-      onAddToCart({ ...recommendedItem, quantity: 1 });
+      onAddToCart(recommendedItem);
     }
   };
 

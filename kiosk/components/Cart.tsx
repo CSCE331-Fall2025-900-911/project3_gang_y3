@@ -7,7 +7,7 @@ import { TOPPINGS } from '../lib/toppings';
 type Item = { id: number | null; name: string; price: number };
 type CartItem = Item & { quantity: number; pointsCost?: number; custom?: { size: 'regular' | 'large'; temperature: 'hot' | 'cold'; ice: 'low' | 'medium' | 'high'; sugar: 'low' | 'medium' | 'high'; toppings?: number[] } };
 
-export default function Cart({ items, customerId, onClear, onRemove, onUpdateQuantity, onPointsUpdate, onQuickOrderSaved }: { items: CartItem[]; customerId?: number; onClear: () => void; onRemove?: (index: number) => void; onUpdateQuantity?: (index: number, delta: number) => void; onPointsUpdate?: (points: number) => void; onQuickOrderSaved?: () => void }) {
+export default function Cart({ items, customerId, onClear, onRemove, onUpdateQuantity, onPointsUpdate, onQuickOrderSaved, onOrderSuccess }: { items: CartItem[]; customerId?: number; onClear: () => void; onRemove?: (index: number) => void; onUpdateQuantity?: (index: number, delta: number) => void; onPointsUpdate?: (points: number) => void; onQuickOrderSaved?: () => void; onOrderSuccess?: () => void }) {
   const { t, language } = useLanguage();
   const [isPlacing, setIsPlacing] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
@@ -45,6 +45,7 @@ export default function Cart({ items, customerId, onClear, onRemove, onUpdateQua
         setPendingOrderId(data.orderId);
         setPendingItems([...items]); // Save items for quick order
         setShowEmailPopup(true);
+        if (onOrderSuccess) onOrderSuccess();
 
         // Fetch updated customer points if customerId exists
         if (customerId && onPointsUpdate) {
@@ -63,6 +64,7 @@ export default function Cart({ items, customerId, onClear, onRemove, onUpdateQua
           }
         }
       } else {
+        // Use the specific error message from the server if available
         setMessage({ type: 'error', text: data.error || t('Failed to place order') });
       }
     } catch {
@@ -249,7 +251,7 @@ export default function Cart({ items, customerId, onClear, onRemove, onUpdateQua
               ? 'bg-green-50 text-green-800 border border-green-200 dark:bg-green-900/30 dark:text-green-300 dark:border-green-800'
               : 'bg-red-50 text-red-800 border border-red-200 dark:bg-red-900/30 dark:text-red-300 dark:border-red-800'
               }`}>
-              {message.type === 'success' ? '✅' : ''} {message.text}
+              {message.text}
             </div>
           )}
 

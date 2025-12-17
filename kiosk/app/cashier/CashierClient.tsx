@@ -159,7 +159,7 @@ export default function CashierClient({ menuItems }: CashierClientProps) {
       </button>
       <div className="max-w-7xl mx-auto">
         <div className="flex items-center gap-4 mb-6">
-          <Image src="/assets/icon.png" alt="Logo" width={40} height={40} priority />
+          <Image className="dark:invert" src="/assets/icon.png" alt="Logo" width={40} height={40} priority />
           <h1 className="text-2xl font-semibold">Cashier POS</h1>
         </div>
 
@@ -172,6 +172,7 @@ export default function CashierClient({ menuItems }: CashierClientProps) {
                   key={item.id ?? `item-${idx}`}
                   item={item}
                   onAdd={requestAdd}
+                  hideImage={true}
                 />
               ))}
             </div>

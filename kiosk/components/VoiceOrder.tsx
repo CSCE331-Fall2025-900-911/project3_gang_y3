@@ -153,17 +153,24 @@ export default function VoiceOrder({ menuItems, onAddToCart }: VoiceOrderProps) 
     };
 
     const findMenuItem = (speech: string): MenuItem | null => {
-        // Normalize speech for matching
+        // Normalize speech for matching: lowercase and trim
         const normalized = speech.toLowerCase().trim();
+        // create a variation without spaces for compound word matching
+        const normalizedNoSpaces = normalized.replace(/\s+/g, '');
 
-        // Try exact match first
+        // 1. Try exact match
         let found = menuItems.find(item =>
             normalized.includes(item.name.toLowerCase())
         );
-
         if (found) return found;
 
-        // Try fuzzy matching for common variations
+        // 2. Try match ignoring spaces (e.g. "wintermelon" matches "Winter Melon")
+        found = menuItems.find(item =>
+            normalizedNoSpaces.includes(item.name.toLowerCase().replace(/\s+/g, ''))
+        );
+        if (found) return found;
+
+        // 3. Try fuzzy matching for common variations (legacy support)
         const variations: { [key: string]: string[] } = {
             'taro milk tea': ['taro', 'taro tea'],
             'thai milk tea': ['thai', 'thai tea'],

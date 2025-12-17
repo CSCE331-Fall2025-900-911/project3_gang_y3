@@ -51,6 +51,75 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // --- NEW: Pre-order Inventory Check ---
+    // Map of inventory_item_id -> required_quantity
+    const inventoryRequirements = new Map<number, number>();
+
+    for (const item of items) {
+      if (!item.name) continue;
+
+      // 1. Get ingredients for the menu item
+      const menuRes = await client.query('SELECT menu_item_id, item_name, inventory_link FROM menu WHERE item_name = $1', [item.name]);
+      if (menuRes.rows.length === 0) {
+        return NextResponse.json({ error: `Menu item not found: ${item.name}` }, { status: 400 });
+      }
+
+      const { inventory_link } = menuRes.rows[0];
+      if (inventory_link) {
+        const matches = inventory_link.match(/\{([^}]*)\}/);
+        if (matches) {
+          const pairs = matches[1].split(',').map((s: string) => s.trim()).filter(Boolean);
+          for (const pair of pairs) {
+            const [invIdStr, qtyStr] = pair.split(':');
+            const invId = parseInt(invIdStr);
+            const qtyPerItem = parseInt(qtyStr) || 1;
+            const totalQty = qtyPerItem * item.quantity;
+
+            inventoryRequirements.set(invId, (inventoryRequirements.get(invId) || 0) + totalQty);
+          }
+        }
+      }
+
+      // 2. Get ingredients for toppings
+      if (item.custom?.toppings) {
+        for (const toppingId of item.custom.toppings) {
+          // Assuming toppingId maps directly to inventory item_id 
+          // (based on previous code usage: UPDATE inventory ... WHERE item_id = toppingId)
+          inventoryRequirements.set(toppingId, (inventoryRequirements.get(toppingId) || 0) + item.quantity);
+        }
+      }
+    }
+
+    // 3. Verify stock in database
+    if (inventoryRequirements.size > 0) {
+      const ids = Array.from(inventoryRequirements.keys());
+      const stockRes = await client.query(
+        'SELECT item_id, item_name, quantity_in_stock FROM inventory WHERE item_id = ANY($1)',
+        [ids]
+      );
+
+      const stockMap = new Map();
+      stockRes.rows.forEach(row => {
+        stockMap.set(row.item_id, { name: row.item_name, stock: row.quantity_in_stock });
+      });
+
+      for (const [id, required] of inventoryRequirements.entries()) {
+        const itemData = stockMap.get(id);
+
+        if (!itemData) {
+          // Inventory item missing from DB?
+          return NextResponse.json({ error: `System Error: Inventory item ${id} not found.` }, { status: 500 });
+        }
+
+        if (itemData.stock < required) {
+          return NextResponse.json({
+            error: `Out of stock: ${itemData.name}. (Available: ${itemData.stock}, Required: ${required})`
+          }, { status: 400 });
+        }
+      }
+    }
+    // --------------------------------------
+
     await client.query('BEGIN');
 
     // Deduct points first if needed

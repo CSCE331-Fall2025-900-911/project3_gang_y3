@@ -57,7 +57,7 @@ export default function RootLayout({
                 Skip to main content
               </a>
               <header role="banner">
-                <div className="fixed top-4 right-4 z-50 flex items-center gap-2">
+                <div id="floating-controls" className="fixed top-4 right-4 z-50 flex items-center gap-2">
                   <MagnifierToggle />
                   <LanguageToggle />
                   <ThemeToggle />

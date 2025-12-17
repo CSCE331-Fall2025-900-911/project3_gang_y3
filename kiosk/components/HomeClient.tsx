@@ -5,11 +5,13 @@ import { useLanguage } from "../components/LanguageProvider";
 import MenuGrid from "../components/MenuGrid";
 import WeatherRecommendation from "../components/WeatherRecommendation";
 import VoiceOrder from "../components/VoiceOrder";
+import CustomizationModal, { Item, CartItem, CustomizationType } from "./CustomizationModal";
 
-type MenuItem = { id: number | null; name: string; price: number; category?: string | null };
+// type MenuItem = { id: number | null; name: string; price: number; category?: string | null };
+// Replaced by Item type from CustomizationModal
 
 interface HomeClientProps {
-  menuItems: MenuItem[];
+  menuItems: Item[];
   error: string | null;
   hasDbUrl: boolean;
 }
@@ -34,6 +36,11 @@ export default function HomeClient({ menuItems, error, hasDbUrl }: HomeClientPro
   const [cart, setCart] = useState<any[]>([]);
   const [orderHistory, setOrderHistory] = useState<any[]>([]);
   const [quickOrders, setQuickOrders] = useState<any[]>([]);
+
+  // Customization State
+  const [customizingItem, setCustomizingItem] = useState<Item | null>(null);
+  const [customType, setCustomType] = useState<CustomizationType>(null);
+  const [addedMessage, setAddedMessage] = useState<string | null>(null);
 
   // Persistence
   useEffect(() => {
@@ -200,7 +207,70 @@ export default function HomeClient({ menuItems, error, hasDbUrl }: HomeClientPro
   };
 
   const handleVoiceOrder = (item: any) => {
-    setCart(prev => [...prev, item]);
+    // VoiceOrder returns a fully customized CartItem, so we can add it directly
+    confirmAddToCart(item);
+  };
+
+  const handleRequestAdd = (it: Item) => {
+    const cat = (it.category || '').toString().trim().toLowerCase();
+
+    // Full customization: milk tea, fruit tea, specialty drinks (size, temp, ice, sugar, toppings)
+    const fullCustom = ['milk tea', 'fruit tea', 'specialty drinks', 'specialty'];
+    // Drink customization: seasonal, smoothies (size, sugar, toppings - no temp/ice)
+    const drinkCustom = ['seasonal', 'smoothies', 'smoothie'];
+    // Quantity only: snacks/desserts
+    const quantityOnly = ['snacks', 'desserts', 'snacks/desserts'];
+
+    const isFullCustom = fullCustom.includes(cat) || fullCustom.some((c) => cat.includes(c));
+    const isDrinkCustom = drinkCustom.includes(cat) || drinkCustom.some((c) => cat.includes(c));
+    const isQuantityOnly = quantityOnly.includes(cat) || quantityOnly.some((c) => cat.includes(c));
+
+    if (isFullCustom) {
+      setCustomizingItem(it);
+      setCustomType('full');
+    } else if (isDrinkCustom) {
+      setCustomizingItem(it);
+      setCustomType('drink');
+    } else if (isQuantityOnly) {
+      setCustomizingItem(it);
+      setCustomType('quantity');
+    } else {
+      // Fallback - just add
+      const newItem: CartItem = { ...it, id: it.id, quantity: 1 };
+      confirmAddToCart(newItem);
+    }
+  };
+
+  const confirmAddToCart = (item: CartItem) => {
+    setCart((prev) => [...prev, item]);
+    setAddedMessage(`${item.name} added to cart!`);
+    setTimeout(() => setAddedMessage(null), 1500);
+    setCustomizingItem(null);
+    setCustomType(null);
+  };
+
+  const cancelCustomization = () => {
+    setCustomizingItem(null);
+    setCustomType(null);
+  };
+
+  const [currentMenuItems, setCurrentMenuItems] = useState<Item[]>(menuItems);
+
+  // Update state if prop changes (e.g. initial load or server revalidation)
+  useEffect(() => {
+    setCurrentMenuItems(menuItems);
+  }, [menuItems]);
+
+  const refreshMenu = async () => {
+    try {
+      const res = await fetch('/api/menu');
+      const data = await res.json();
+      if (data.items) {
+        setCurrentMenuItems(data.items);
+      }
+    } catch (e) {
+      console.error('Failed to refresh menu', e);
+    }
   };
 
   return (
@@ -288,7 +358,7 @@ export default function HomeClient({ menuItems, error, hasDbUrl }: HomeClientPro
         <div className="pointer-events-auto shrink-0">
           <WeatherRecommendation
             menuItems={menuItems}
-            onAddToCart={(item) => setCart(prev => [...prev, item])}
+            onAddToCart={handleRequestAdd}
           />
         </div>
       </div>
@@ -389,7 +459,15 @@ export default function HomeClient({ menuItems, error, hasDbUrl }: HomeClientPro
             {menuItems.length > 0 && (
               <div>
                 <div className="mb-3 font-medium">{t("Menu")}</div>
-                <MenuGrid items={menuItems} customerId={customer?.id} cartState={[cart, setCart]} onPointsUpdate={updateCustomerPoints} onQuickOrderSaved={refreshQuickOrders} />
+                <MenuGrid
+                  items={currentMenuItems}
+                  customerId={customer?.id}
+                  cartState={[cart, setCart]}
+                  onPointsUpdate={updateCustomerPoints}
+                  onQuickOrderSaved={refreshQuickOrders}
+                  onRequestAdd={handleRequestAdd}
+                  onRefresh={refreshMenu}
+                />
               </div>
             )}
           </div>
@@ -456,6 +534,21 @@ export default function HomeClient({ menuItems, error, hasDbUrl }: HomeClientPro
               <button type="submit" className="bg-green-600 text-white py-2 rounded font-bold hover:bg-green-700">{t("Register")}</button>
             </form>
           </div>
+        </div>
+      )}
+      {/* Customization Modal */}
+      {customizingItem && (
+        <CustomizationModal
+          item={customizingItem}
+          type={customType}
+          onClose={cancelCustomization}
+          onConfirm={confirmAddToCart}
+        />
+      )}
+
+      {addedMessage && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 bg-black text-white dark:bg-white dark:text-black px-4 py-2 rounded shadow-lg animate-fadeSlideIn z-50">
+          {addedMessage}
         </div>
       )}
     </div>

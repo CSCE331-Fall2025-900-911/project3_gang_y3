@@ -7,7 +7,7 @@ import { ITEM_IMAGES } from '../lib/item-images';
 
 type Item = { id: number | null; name: string; price: number; category?: string | null; availability?: boolean };
 
-export default function ItemCard({ item, onAdd }: { item: Item; onAdd: (it: Item) => void }) {
+export default function ItemCard({ item, onAdd, hideImage }: { item: Item; onAdd: (it: Item) => void; hideImage?: boolean }) {
   const { t, language } = useLanguage();
 
   const outOfStock = item.availability === false;
@@ -36,22 +36,24 @@ export default function ItemCard({ item, onAdd }: { item: Item; onAdd: (it: Item
     <div
       className={`relative group rounded-2xl p-4 flex flex-col transition-all duration-300 card-glow border border-transparent ${outOfStock ? 'bg-gray-100 dark:bg-zinc-800 opacity-60 grayscale' : 'bg-white dark:bg-zinc-800 hover:-translate-y-1'}`}
     >
-      <div className="relative w-full h-48 mb-4 rounded-xl overflow-hidden bg-gray-100 dark:bg-zinc-700 shadow-inner group-hover:shadow-md transition-shadow">
-        <Image
-          src={getImageForCategory()}
-          alt={item.name}
-          fill
-          className="object-cover transition-transform duration-500 group-hover:scale-110"
-          sizes="(max-width: 768px) 50vw, 33vw"
-        />
-        {outOfStock && (
-          <div className="absolute inset-0 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-            <span className="text-white font-bold px-4 py-2 border-2 border-white rounded-lg transform -rotate-12">
-              {t('SOLD OUT')}
-            </span>
-          </div>
-        )}
-      </div>
+      {!hideImage && (
+        <div className="relative w-full h-48 mb-4 rounded-xl overflow-hidden bg-gray-100 dark:bg-zinc-700 shadow-inner group-hover:shadow-md transition-shadow">
+          <Image
+            src={getImageForCategory()}
+            alt={item.name}
+            fill
+            className="object-cover transition-transform duration-500 group-hover:scale-110"
+            sizes="(max-width: 768px) 50vw, 33vw"
+          />
+          {outOfStock && (
+            <div className="absolute inset-0 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+              <span className="text-white font-bold px-4 py-2 border-2 border-white rounded-lg transform -rotate-12">
+                {t('SOLD OUT')}
+              </span>
+            </div>
+          )}
+        </div>
+      )}
 
       <div className="flex-1 flex flex-col">
         <div className="font-bold text-lg text-black dark:text-white leading-tight mb-1 group-hover:text-primary dark:group-hover:text-primary-light transition-colors">

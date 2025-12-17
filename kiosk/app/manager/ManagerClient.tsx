@@ -350,7 +350,7 @@ export default function ManagerClient({ initialData }: ManagerClientProps) {
 
         {/* Title */}
         <div className="flex items-center gap-4 mb-6">
-          <Image src="/assets/icon.png" alt="Logo" width={40} height={40} priority />
+          <Image className="dark:invert" src="/assets/icon.png" alt="Logo" width={40} height={40} priority />
           <h1 className="text-2xl font-semibold">{t("Manager Dashboard")}</h1>
         </div>
 
