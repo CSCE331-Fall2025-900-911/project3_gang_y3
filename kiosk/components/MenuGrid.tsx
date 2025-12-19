@@ -74,7 +74,7 @@ export default function MenuGrid({ items, customerId, cartState, onPointsUpdate,
       <div className="flex flex-col gap-10">
         {sortedCategories.map((category) => (
           <div key={category}>
-            <h2 className="text-xl font-semibold mb-3 text-black dark:text-white">{category.charAt(0).toUpperCase() + category.slice(1)}</h2>
+            <h2 className="text-xl font-semibold mb-3 text-black dark:text-white">{t(category.charAt(0).toUpperCase() + category.slice(1))}</h2>
             <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
               {grouped[category].map((it, idx) => (
                 <ItemCard key={it.id ?? `${it.name ?? 'item'}-${idx}`} item={it} onAdd={onRequestAdd} />

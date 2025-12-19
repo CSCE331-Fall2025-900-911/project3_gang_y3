@@ -27,7 +27,7 @@ export default function VoiceOrder({ menuItems, onAddToCart }: VoiceOrderProps) 
     const { t } = useLanguage();
     const [isListening, setIsListening] = useState(false);
     const [transcript, setTranscript] = useState('');
-    const [liveTranscript, setLiveTranscript] = useState(''); // Live interim transcript
+    const [liveTranscript, setLiveTranscript] = useState('');
     const [parsedOrder, setParsedOrder] = useState<CartItem | null>(null);
     const [showConfirmation, setShowConfirmation] = useState(false);
     const [error, setError] = useState('');
@@ -37,13 +37,12 @@ export default function VoiceOrder({ menuItems, onAddToCart }: VoiceOrderProps) 
     const [showMicDropdown, setShowMicDropdown] = useState(false);
 
     useEffect(() => {
-        // Initialize speech recognition
         if (typeof window !== 'undefined') {
             const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
             if (SpeechRecognition) {
                 const recognitionInstance = new SpeechRecognition();
                 recognitionInstance.continuous = false;
-                recognitionInstance.interimResults = true; // Enable interim results for live transcription
+                recognitionInstance.interimResults = true;
                 recognitionInstance.lang = 'en-US';
 
                 recognitionInstance.onresult = (event: any) => {
@@ -59,10 +58,8 @@ export default function VoiceOrder({ menuItems, onAddToCart }: VoiceOrderProps) 
                         }
                     }
 
-                    // Update live transcript for display
                     setLiveTranscript(interimTranscript);
 
-                    // When final result is available, parse it
                     if (finalTranscript) {
                         const fullTranscript = finalTranscript.toLowerCase();
                         setTranscript(fullTranscript);
@@ -82,8 +79,6 @@ export default function VoiceOrder({ menuItems, onAddToCart }: VoiceOrderProps) 
                 setRecognition(recognitionInstance);
             }
         }
-
-        // Enumerate available microphones
         enumerateMicrophones();
     }, []);
 
@@ -96,7 +91,7 @@ export default function VoiceOrder({ menuItems, onAddToCart }: VoiceOrderProps) 
                 setSelectedMicId(microphones[0].deviceId);
             }
         } catch (err) {
-            console.error('Error enumerating microphones:', err);
+            console.error(err);
         }
     };
 
@@ -104,32 +99,28 @@ export default function VoiceOrder({ menuItems, onAddToCart }: VoiceOrderProps) 
         setSelectedMicId(deviceId);
         setShowMicDropdown(false);
 
-        // Request permission for the selected microphone
         try {
             await navigator.mediaDevices.getUserMedia({
                 audio: { deviceId: { exact: deviceId } }
             });
         } catch (err) {
-            console.error('Error accessing microphone:', err);
+            console.error(err);
         }
     };
 
     const parseOrder = (speech: string) => {
-        // Find menu item by fuzzy matching
         const menuItem = findMenuItem(speech);
         if (!menuItem) {
             setError('Could not find that item on the menu. Please try again.');
             return;
         }
 
-        // Parse customizations
         const size = parseSize(speech);
         const temperature = parseTemperature(speech);
         const ice = parseIce(speech);
         const sugar = parseSugar(speech);
         const toppings = parseToppings(speech);
 
-        // Calculate price with customizations
         const sizeUpcharge = SIZE_PRICES[size];
         const toppingsUpcharge = toppings.length * TOPPING_PRICE;
         const totalPrice = menuItem.price + sizeUpcharge + toppingsUpcharge;
@@ -153,24 +144,19 @@ export default function VoiceOrder({ menuItems, onAddToCart }: VoiceOrderProps) 
     };
 
     const findMenuItem = (speech: string): MenuItem | null => {
-        // Normalize speech for matching: lowercase and trim
         const normalized = speech.toLowerCase().trim();
-        // create a variation without spaces for compound word matching
         const normalizedNoSpaces = normalized.replace(/\s+/g, '');
 
-        // 1. Try exact match
         let found = menuItems.find(item =>
             normalized.includes(item.name.toLowerCase())
         );
         if (found) return found;
 
-        // 2. Try match ignoring spaces (e.g. "wintermelon" matches "Winter Melon")
         found = menuItems.find(item =>
             normalizedNoSpaces.includes(item.name.toLowerCase().replace(/\s+/g, ''))
         );
         if (found) return found;
 
-        // 3. Try fuzzy matching for common variations (legacy support)
         const variations: { [key: string]: string[] } = {
             'taro milk tea': ['taro', 'taro tea'],
             'thai milk tea': ['thai', 'thai tea'],
@@ -226,7 +212,6 @@ export default function VoiceOrder({ menuItems, onAddToCart }: VoiceOrderProps) 
             }
         });
 
-        // Handle common variations
         if (speech.includes('boba') || speech.includes('pearls') || speech.includes('tapioca')) {
             const boba = TOPPINGS.find(t => t.name.toLowerCase().includes('boba'));
             if (boba && !toppingIds.includes(boba.id)) toppingIds.push(boba.id);
@@ -267,10 +252,8 @@ export default function VoiceOrder({ menuItems, onAddToCart }: VoiceOrderProps) 
 
     return (
         <>
-            {/* Voice Order Button with Integrated Microphone Selector */}
             <div className="fixed top-4 right-52 z-[60]">
                 <div className="flex items-center gap-1 bg-red-500 hover:bg-red-600 rounded-full shadow-lg transition-colors">
-                    {/* Main Voice Button */}
                     <button
                         onClick={startListening}
                         disabled={isListening}
@@ -290,7 +273,6 @@ export default function VoiceOrder({ menuItems, onAddToCart }: VoiceOrderProps) 
                         )}
                     </button>
 
-                    {/* Dropdown Toggle */}
                     <button
                         onClick={() => setShowMicDropdown(!showMicDropdown)}
                         className="p-3 pr-4 rounded-r-full hover:bg-red-600 transition-colors border-l border-red-400"
@@ -303,7 +285,6 @@ export default function VoiceOrder({ menuItems, onAddToCart }: VoiceOrderProps) 
                     </button>
                 </div>
 
-                {/* Microphone Dropdown */}
                 {showMicDropdown && availableMics.length > 0 && (
                     <div className="absolute top-14 right-0 bg-white dark:bg-zinc-800 rounded-lg shadow-xl border border-gray-200 dark:border-zinc-700 min-w-[250px] max-h-60 overflow-y-auto z-[100]">
                         {availableMics.map((mic) => (
@@ -320,7 +301,6 @@ export default function VoiceOrder({ menuItems, onAddToCart }: VoiceOrderProps) 
                 )}
             </div>
 
-            {/* Voice Order Popup with Instructions and Live Transcription */}
             {isListening && (
                 <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/20 backdrop-blur-sm">
                     <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl border border-white/20 p-6 max-w-lg w-full">
@@ -362,7 +342,6 @@ export default function VoiceOrder({ menuItems, onAddToCart }: VoiceOrderProps) 
                 </div>
             )}
 
-            {/* Confirmation Modal */}
             {showConfirmation && parsedOrder && (
                 <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 backdrop-blur-sm">
                     <div className="absolute inset-0 bg-black/40" onClick={cancelOrder}></div>
@@ -406,7 +385,6 @@ export default function VoiceOrder({ menuItems, onAddToCart }: VoiceOrderProps) 
                 </div>
             )}
 
-            {/* Error Message */}
             {error && (
                 <div className="fixed bottom-20 left-1/2 -translate-x-1/2 bg-red-500 text-white px-4 py-2 rounded-lg shadow-lg z-50">
                     {error}

@@ -1,49 +1,53 @@
 import { NextResponse } from 'next/server';
 import { pool } from '../../../../lib/db';
 
-// Simple query interpreter for common business questions
-async function interpretAndQuery(question: string): Promise<string> {
-    const q = question.toLowerCase().trim();
+async function interpretAndQuery(question: string, lang: string = 'en'): Promise<string> {
+    // Normalize text: lowercase and remove accents
+    const normalize = (str: string) => str.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+    const q = normalize(question);
+    const isSpanish = lang.startsWith('es');
+
+    const t = (en: string, es: string) => isSpanish ? es : en;
 
     try {
-        // Sales-related questions
-        if (q.includes('total sales') || q.includes('how much') && q.includes('today')) {
+        if (q.includes('total sales') || (q.includes('how much') && q.includes('today')) || (isSpanish && (q.includes('ventas') || q.includes('cuanto') || q.includes('ingresos')))) {
             const result = await pool.query(
                 'SELECT COALESCE(SUM(total_amount), 0) as total FROM orders WHERE order_date = CURRENT_DATE'
             );
-            return `Today's total sales: $${parseFloat(result.rows[0].total).toFixed(2)}`;
+            const total = parseFloat(result.rows[0].total).toFixed(2);
+            return t(`Today's total sales: $${total}`, `Ventas totales de hoy: $${total}`);
         }
 
-        if (q.includes('yesterday') && (q.includes('sales') || q.includes('revenue'))) {
+        if ((q.includes('yesterday') && (q.includes('sales') || q.includes('revenue'))) || (isSpanish && q.includes('ayer') && (q.includes('ventas') || q.includes('ingresos')))) {
             const result = await pool.query(
                 'SELECT COALESCE(SUM(total_amount), 0) as total FROM orders WHERE order_date = CURRENT_DATE - 1'
             );
-            return `Yesterday's total sales: $${parseFloat(result.rows[0].total).toFixed(2)}`;
+            const total = parseFloat(result.rows[0].total).toFixed(2);
+            return t(`Yesterday's total sales: $${total}`, `Ventas de ayer: $${total}`);
         }
 
-        if (q.includes('this week') && (q.includes('sales') || q.includes('revenue'))) {
+        if ((q.includes('this week') && (q.includes('sales') || q.includes('revenue'))) || (isSpanish && q.includes('semana') && (q.includes('ventas') || q.includes('ingresos')))) {
             const result = await pool.query(
                 'SELECT COALESCE(SUM(total_amount), 0) as total FROM orders WHERE order_date >= CURRENT_DATE - 6'
             );
-            return `This week's total sales: $${parseFloat(result.rows[0].total).toFixed(2)}`;
+            const total = parseFloat(result.rows[0].total).toFixed(2);
+            return t(`This week's total sales: $${total}`, `Ventas de esta semana: $${total}`);
         }
 
-        // Order count questions
-        if (q.includes('how many orders') || q.includes('order count') || q.includes('total orders')) {
-            if (q.includes('yesterday')) {
+        if (q.includes('how many orders') || q.includes('order count') || q.includes('total orders') || (isSpanish && (q.includes('cuantas ordenes') || q.includes('pedidos') || q.includes('cantidad')))) {
+            if (q.includes('yesterday') || (isSpanish && q.includes('ayer'))) {
                 const result = await pool.query(
                     'SELECT COUNT(*) as count FROM orders WHERE order_date = CURRENT_DATE - 1'
                 );
-                return `Yesterday's order count: ${result.rows[0].count} orders`;
+                return t(`Yesterday's order count: ${result.rows[0].count} orders`, `Cantidad de pedidos de ayer: ${result.rows[0].count}`);
             }
             const result = await pool.query(
                 'SELECT COUNT(*) as count FROM orders WHERE order_date = CURRENT_DATE'
             );
-            return `Today's order count: ${result.rows[0].count} orders`;
+            return t(`Today's order count: ${result.rows[0].count} orders`, `Cantidad de pedidos de hoy: ${result.rows[0].count}`);
         }
 
-        // Best seller questions
-        if (q.includes('best seller') || q.includes('top selling') || q.includes('most popular')) {
+        if (q.includes('best seller') || q.includes('top selling') || q.includes('most popular') || (isSpanish && (q.includes('mas vendido') || q.includes('populares') || q.includes('mejor')))) {
             const result = await pool.query(`
         SELECT m.item_name, COUNT(*) as sales
         FROM orders o,
@@ -56,141 +60,102 @@ async function interpretAndQuery(question: string): Promise<string> {
         LIMIT 1
       `);
             if (result.rows.length > 0) {
-                return `Today's best seller: ${result.rows[0].item_name} with ${result.rows[0].sales} orders`;
+                return t(
+                    `Today's best seller: ${result.rows[0].item_name} with ${result.rows[0].sales} orders`,
+                    `Lo más vendido hoy: ${result.rows[0].item_name} con ${result.rows[0].sales} pedidos`
+                );
             }
-            return `No sales data available for today yet.`;
+            return t(`No sales data available for today yet.`, `Aún no hay datos de ventas para hoy.`);
         }
 
-        // Inventory questions
-        if (q.includes('low stock') || q.includes('running low')) {
+        if (q.includes('low stock') || q.includes('running low') || (isSpanish && (q.includes('poco inventario') || q.includes('bajo stock') || q.includes('pocas') || q.includes('poco stock')))) {
             const result = await pool.query(
                 'SELECT item_name, quantity_in_stock, unit FROM inventory WHERE quantity_in_stock < 20 ORDER BY quantity_in_stock ASC LIMIT 5'
             );
             if (result.rows.length === 0) {
-                return 'All items are well stocked!';
+                return t('All items are well stocked!', '¡Todos los artículos están bien abastecidos!');
             }
             const items = result.rows.map(r => `${r.item_name}: ${r.quantity_in_stock} ${r.unit}`).join(', ');
-            return `Low stock items: ${items}`;
+            return t(`Low stock items: ${items}`, `Artículos con bajo inventario: ${items}`);
         }
 
-        if (q.includes('out of stock')) {
+        if (q.includes('out of stock') || (isSpanish && (q.includes('agotado') || q.includes('sin stock')))) {
             const result = await pool.query(
                 'SELECT item_name FROM inventory WHERE quantity_in_stock <= 0'
             );
             if (result.rows.length === 0) {
-                return 'No items are currently out of stock!';
+                return t('No items are currently out of stock!', '¡No hay artículos agotados actualmente!');
             }
-            return `Out of stock: ${result.rows.map(r => r.item_name).join(', ')}`;
+            return t(`Out of stock: ${result.rows.map(r => r.item_name).join(', ')}`, `Agotado: ${result.rows.map(r => r.item_name).join(', ')}`);
         }
 
-        // Staff questions
-        if (q.includes('how many staff') || q.includes('staff count') || q.includes('employees')) {
+        if (q.includes('how many staff') || q.includes('staff count') || q.includes('employees') || (isSpanish && (q.includes('personal') || q.includes('empleados') || q.includes('trabajadores')))) {
             const result = await pool.query(
                 "SELECT role, COUNT(*) as count FROM authentication WHERE role IN ('Cashier', 'Manager') GROUP BY role"
             );
             const staff = result.rows.map(r => `${r.count} ${r.role}(s)`).join(', ');
-            return `Staff count: ${staff}`;
+            return t(`Staff count: ${staff}`, `Conteo del personal: ${staff}`);
         }
 
-        // Payment method questions
-        if (q.includes('cash') && q.includes('card')) {
+        if ((q.includes('cash') && q.includes('card')) || (isSpanish && q.includes('efectivo') && q.includes('tarjeta'))) {
             const result = await pool.query(`
         SELECT 
           SUM(CASE WHEN LOWER(payment_method) = 'cash' THEN 1 ELSE 0 END) as cash_count,
           SUM(CASE WHEN LOWER(payment_method) = 'card' THEN 1 ELSE 0 END) as card_count
         FROM orders WHERE order_date = CURRENT_DATE
       `);
-            return `Today: ${result.rows[0].cash_count || 0} cash orders, ${result.rows[0].card_count || 0} card orders`;
+            return t(
+                `Today: ${result.rows[0].cash_count || 0} cash orders, ${result.rows[0].card_count || 0} card orders`,
+                `Hoy: ${result.rows[0].cash_count || 0} pedidos en efectivo, ${result.rows[0].card_count || 0} pedidos con tarjeta`
+            );
         }
 
-        if (q.includes('cash') && (q.includes('total') || q.includes('amount'))) {
-            const result = await pool.query(`
-        SELECT COALESCE(SUM(total_amount), 0) as total 
-        FROM orders 
-        WHERE order_date = CURRENT_DATE AND LOWER(payment_method) = 'cash'
-      `);
-            return `Today's cash sales: $${parseFloat(result.rows[0].total).toFixed(2)}`;
-        }
-
-        if (q.includes('card') && (q.includes('total') || q.includes('amount'))) {
-            const result = await pool.query(`
-        SELECT COALESCE(SUM(total_amount), 0) as total 
-        FROM orders 
-        WHERE order_date = CURRENT_DATE AND LOWER(payment_method) = 'card'
-      `);
-            return `Today's card sales: $${parseFloat(result.rows[0].total).toFixed(2)}`;
-        }
-
-        // Voided orders
-        if (q.includes('void') || q.includes('voided')) {
+        if (q.includes('void') || q.includes('voided') || (isSpanish && (q.includes('anulado') || q.includes('cancelado')))) {
             const result = await pool.query(
                 "SELECT COUNT(*) as count FROM orders WHERE order_date = CURRENT_DATE AND order_status = 'Voided'"
             );
-            return `Voided orders today: ${result.rows[0].count}`;
+            return t(`Voided orders today: ${result.rows[0].count}`, `Pedidos anulados hoy: ${result.rows[0].count}`);
         }
 
-        // Average order value
-        if (q.includes('average') && (q.includes('order') || q.includes('ticket'))) {
+        if (q.includes('average') && (q.includes('order') || q.includes('ticket')) || (isSpanish && (q.includes('promedio') || q.includes('media')))) {
             const result = await pool.query(`
         SELECT COALESCE(AVG(total_amount), 0) as avg 
         FROM orders 
         WHERE order_date = CURRENT_DATE
       `);
-            return `Average order value today: $${parseFloat(result.rows[0].avg).toFixed(2)}`;
+            const avg = parseFloat(result.rows[0].avg).toFixed(2);
+            return t(`Average order value today: $${avg}`, `Valor promedio del pedido hoy: $${avg}`);
         }
 
-        // Menu items count
-        if (q.includes('menu') && (q.includes('how many') || q.includes('count'))) {
+        if (q.includes('menu') && (q.includes('how many') || q.includes('count')) || (isSpanish && q.includes('menu') && (q.includes('cuantos') || q.includes('cantidad')))) {
             const result = await pool.query('SELECT COUNT(*) as count FROM menu');
-            return `Total menu items: ${result.rows[0].count}`;
+            return t(`Total menu items: ${result.rows[0].count}`, `Total de elementos del menú: ${result.rows[0].count}`);
         }
 
-        // Categories
-        if (q.includes('categories') || q.includes('category')) {
-            const result = await pool.query('SELECT DISTINCT category FROM menu ORDER BY category');
-            return `Menu categories: ${result.rows.map(r => r.category).join(', ')}`;
-        }
-
-        // Peak hour
-        if (q.includes('busiest') || q.includes('peak hour') || q.includes('rush hour')) {
-            const result = await pool.query(`
-        SELECT EXTRACT(HOUR FROM order_time) as hour, COUNT(*) as count 
-        FROM orders 
-        WHERE order_date = CURRENT_DATE 
-        GROUP BY hour 
-        ORDER BY count DESC 
-        LIMIT 1
-      `);
-            if (result.rows.length > 0) {
-                const hour = parseInt(result.rows[0].hour);
-                const displayHour = hour > 12 ? `${hour - 12}pm` : hour === 12 ? '12pm' : `${hour}am`;
-                return `Busiest hour today: ${displayHour} with ${result.rows[0].count} orders`;
-            }
-            return 'No orders today yet.';
-        }
-
-        // Default response
-        return "I can help with questions about sales, orders, inventory, staff, and more. Try asking:\n• What are today's total sales?\n• How many orders today?\n• What's the best seller?\n• Any low stock items?\n• How many staff members?\n• Cash vs card breakdown?";
+        return t(
+            "I can help with questions about sales, orders, inventory, staff, and more. Try asking:\n• What are today's total sales?\n• How many orders today?\n• What's the best seller?\n• Any low stock items?\n• How many staff members?\n• Cash vs card breakdown?",
+            "Puedo ayudar con preguntas sobre ventas, pedidos, inventario, personal y más. Intenta preguntar:\n• ¿Cuáles son las ventas totales de hoy?\n• ¿Cuántos pedidos hoy?\n• ¿Cuál es el más vendido?\n• ¿Algún artículo con poco stock?\n• ¿Cuántos miembros del personal?\n• ¿Desglose efectivo vs tarjeta?"
+        );
 
     } catch (error) {
-        console.error('Query error:', error);
-        return 'Sorry, I had trouble processing that question. Please try rephrasing.';
+        console.error(error);
+        return t('Sorry, I had trouble processing that question. Please try rephrasing.', 'Lo siento, tuve problemas al procesar esa pregunta. Por favor intenta reformularla.');
     }
 }
 
 export async function POST(request: Request) {
     try {
-        const { question } = await request.json();
+        const { question, language } = await request.json();
 
         if (!question || typeof question !== 'string') {
             return NextResponse.json({ error: 'Question is required' }, { status: 400 });
         }
 
-        const answer = await interpretAndQuery(question);
+        const answer = await interpretAndQuery(question, language || 'en');
         return NextResponse.json({ answer });
 
     } catch (error) {
-        console.error('Chat error:', error);
+        console.error(error);
         return NextResponse.json({ error: 'Failed to process question' }, { status: 500 });
     }
 }

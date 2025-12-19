@@ -5,7 +5,7 @@ import { translateMenuItem } from '../lib/translations';
 
 interface RecommendationProps {
   menuItems: Array<{ id: number | null; name: string; price: number; category?: string | null }>;
-  onAddToCart?: (item: any) => void;
+  onAddToCart?: (item: any, defaults?: { temperature?: 'hot' | 'cold' }) => void;
 }
 
 export default function WeatherRecommendation({ menuItems, onAddToCart }: RecommendationProps) {
@@ -79,21 +79,26 @@ export default function WeatherRecommendation({ menuItems, onAddToCart }: Recomm
   // Generate dynamic message based on temperature
   const getWeatherMessage = () => {
     if (temperature < 50) {
-      return "Brrr! It's freezing! Warm up with";
+      return t("Brrr! It's freezing! Warm up with");
     } else if (temperature < 60) {
-      return "Wow, it's chilly! Warm up with";
+      return t("Wow, it's chilly! Warm up with");
     } else if (temperature >= 85) {
-      return "It's scorching! Cool down with";
+      return t("It's scorching! Cool down with");
     } else if (temperature >= 75) {
-      return "It's hot out there! Refresh yourself with";
+      return t("It's hot out there! Refresh yourself with");
     } else {
-      return "Perfect weather for";
+      return t("Perfect weather for");
     }
   };
 
   const handleAdd = () => {
     if (onAddToCart && recommendedItem) {
-      onAddToCart(recommendedItem);
+      // If it's cold (< 60F), suggest hot drink
+      if (temperature !== null && temperature < 60) {
+        onAddToCart(recommendedItem, { temperature: 'hot' });
+      } else {
+        onAddToCart(recommendedItem);
+      }
     }
   };
 

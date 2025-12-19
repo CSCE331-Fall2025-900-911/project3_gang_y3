@@ -17,16 +17,17 @@ const TOPPING_PRICE = 0.50;
 interface CustomizationModalProps {
     item: Item;
     type: CustomizationType;
+    initialTemperature?: 'hot' | 'cold';
     onClose: () => void;
     onConfirm: (cartItem: CartItem) => void;
 }
 
-export default function CustomizationModal({ item, type, onClose, onConfirm }: CustomizationModalProps) {
+export default function CustomizationModal({ item, type, initialTemperature, onClose, onConfirm }: CustomizationModalProps) {
     const { t, language } = useLanguage();
 
     const [quantity, setQuantity] = useState(1);
     const [size, setSize] = useState<'regular' | 'large'>('regular');
-    const [temperature, setTemperature] = useState<'hot' | 'cold'>('cold');
+    const [temperature, setTemperature] = useState<'hot' | 'cold'>(initialTemperature || 'cold');
     const [ice, setIce] = useState<'low' | 'medium' | 'high'>('medium');
     const [sugar, setSugar] = useState<'low' | 'medium' | 'high'>('medium');
     const [selectedToppings, setSelectedToppings] = useState<number[]>([]);
@@ -130,8 +131,8 @@ export default function CustomizationModal({ item, type, onClose, onConfirm }: C
                     </div>
                 )}
 
-                {/* Ice - show only for full customization */}
-                {type === 'full' && (
+                {/* Ice - show only for full customization AND if not hot */}
+                {type === 'full' && temperature !== 'hot' && (
                     <div className="mb-4">
                         <div className="font-medium mb-1">{t("Ice")}</div>
                         <div className="flex gap-3">

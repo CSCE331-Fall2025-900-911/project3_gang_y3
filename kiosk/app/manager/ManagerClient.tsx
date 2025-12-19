@@ -6,6 +6,7 @@ import { useLanguage } from '../../components/LanguageProvider';
 import { useAuth } from '../../lib/useAuth';
 import { signOut } from 'next-auth/react';
 import type { InventoryItem, BestSeller, SalesData, RecentOrder, MenuItem, PaymentBreakdown, Staff } from '../../lib/managerData';
+import { translateMenuItem } from '../../lib/translations';
 
 interface ManagerClientProps {
   initialData: {
@@ -23,7 +24,7 @@ interface ManagerClientProps {
 }
 
 export default function ManagerClient({ initialData }: ManagerClientProps) {
-  // State for Product Usage Chart
+
   const [usageStart, setUsageStart] = useState('');
   const [usageEnd, setUsageEnd] = useState('');
   const [usageData, setUsageData] = useState<Array<{ item_name: string; used: number; unit: string }>>([]);
@@ -38,7 +39,7 @@ export default function ManagerClient({ initialData }: ManagerClientProps) {
     }
     setLoadingUsage(false);
   };
-  // Add X-Report counters state if not present
+
   const [xReportCounters, setXReportCounters] = useState({
     hourlySales: 0,
     returns: 0,
@@ -50,7 +51,7 @@ export default function ManagerClient({ initialData }: ManagerClientProps) {
   const [showVoidModal, setShowVoidModal] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<RecentOrder | null>(null);
 
-  // Reset counters
+
   const handleRunZReport = () => {
     setShowZReportModal(true);
   };
@@ -64,62 +65,62 @@ export default function ManagerClient({ initialData }: ManagerClientProps) {
       paymentMethods: {},
     });
     setShowZReportModal(false);
-    // Call backend API to reset counters
+
     fetch('/api/manager/reset-reports', {
       method: 'POST',
     });
   };
-  // Track inventory updates (demo: in-memory, reset on reload)
+
   const [inventoryUpdateCount, setInventoryUpdateCount] = useState(0);
 
-  // Red threshold for inventory (e.g., <10 units)
+
   const RED_THRESHOLD = 10;
   const redThresholdCount = initialData.inventory.filter(item => item.quantity_in_stock < RED_THRESHOLD).length;
 
-  // Wrap inventory update handler to increment count
+
   const handleUpdateInventoryTracked = async () => {
     await handleUpdateInventory();
     setInventoryUpdateCount(c => c + 1);
   };
   const router = useRouter();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const { role, isLoading } = useAuth();
   const { inventory, bestSeller, salesData, recentOrders, totalOrdersToday, lowStockItems, menuItems, categories, paymentBreakdown, staff: initialStaff } = initialData;
 
-  // State for staff management
+
   const [staffList, setStaffList] = useState<Staff[]>(initialStaff || []);
   const [showAddStaff, setShowAddStaff] = useState(false);
   const [newStaffName, setNewStaffName] = useState('');
   const [newStaffEmail, setNewStaffEmail] = useState('');
   const [newStaffRole, setNewStaffRole] = useState<'Cashier' | 'Manager'>('Cashier');
 
-  // State for X-Report chart metric
+
   const [chartMetric, setChartMetric] = useState<'sales' | 'voids' | 'cash' | 'card'>('sales');
 
-  // State for chat widget
+
   const [chatMessages, setChatMessages] = useState<Array<{ type: 'user' | 'bot'; text: string }>>([
-    { type: 'bot', text: 'Hi! Ask me anything about your business data. Try "What are today\'s total sales?" or "Any low stock items?"' }
+    { type: 'bot', text: t('Hi! Ask me anything about your business data. Try "What are today\'s total sales?" or "Any low stock items?"') }
   ]);
   const [chatInput, setChatInput] = useState('');
   const [chatLoading, setChatLoading] = useState(false);
 
-  // State for editing menu
+
   const [editingMenu, setEditingMenu] = useState<MenuItem | null>(null);
   const [menuPrice, setMenuPrice] = useState('');
   const [menuInventoryLink, setMenuInventoryLink] = useState('');
 
-  // State for editing inventory
+
   const [editingInventory, setEditingInventory] = useState<InventoryItem | null>(null);
   const [inventoryQty, setInventoryQty] = useState('');
 
-  // State for adding new menu item
+
   const [showAddMenu, setShowAddMenu] = useState(false);
   const [newMenuName, setNewMenuName] = useState('');
   const [newMenuCategory, setNewMenuCategory] = useState('');
   const [newMenuPrice, setNewMenuPrice] = useState('');
   const [newMenuInventoryLink, setNewMenuInventoryLink] = useState('');
 
-  // State for adding new inventory item
+
   const [showAddInventory, setShowAddInventory] = useState(false);
   const [newInventoryName, setNewInventoryName] = useState('');
   const [newInventoryQty, setNewInventoryQty] = useState('');
@@ -242,7 +243,7 @@ export default function ManagerClient({ initialData }: ManagerClientProps) {
     }
   };
 
-  // Staff Management Handlers
+
   const handleAddStaff = async () => {
     if (!newStaffName) return;
     try {
@@ -300,7 +301,7 @@ export default function ManagerClient({ initialData }: ManagerClientProps) {
     }
   };
 
-  // Chat handler
+
   const handleSendChat = async () => {
     if (!chatInput.trim() || chatLoading) return;
 
@@ -313,18 +314,18 @@ export default function ManagerClient({ initialData }: ManagerClientProps) {
       const res = await fetch('/api/manager/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ question: userMessage })
+        body: JSON.stringify({ question: userMessage, language })
       });
 
       if (res.ok) {
         const data = await res.json();
         setChatMessages(prev => [...prev, { type: 'bot', text: data.answer }]);
       } else {
-        setChatMessages(prev => [...prev, { type: 'bot', text: 'Sorry, I couldn\'t process that request.' }]);
+        setChatMessages(prev => [...prev, { type: 'bot', text: t('Sorry, I couldn\'t process that request.') }]);
       }
     } catch (error) {
       console.error('Chat error:', error);
-      setChatMessages(prev => [...prev, { type: 'bot', text: 'Connection error. Please try again.' }]);
+      setChatMessages(prev => [...prev, { type: 'bot', text: t('Connection error. Please try again.') }]);
     } finally {
       setChatLoading(false);
     }
@@ -348,14 +349,14 @@ export default function ManagerClient({ initialData }: ManagerClientProps) {
       </div>
       <div className="max-w-7xl mx-auto">
 
-        {/* Title */}
+
         <div className="flex items-center gap-4 mb-6">
           <Image className="dark:invert" src="/assets/icon.png" alt="Logo" width={40} height={40} priority />
           <h1 className="text-2xl font-semibold">{t("Manager Dashboard")}</h1>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-          {/* Product Usage Chart Widget */}
+
           <div className="bg-white dark:bg-zinc-800 p-6 rounded shadow flex flex-col gap-4" style={{ minHeight: '400px' }}>
             <h2 className="text-xl font-semibold mb-2">{t("Product Usage Chart")}</h2>
             <div className="mb-1 text-sm text-gray-600 dark:text-gray-300">{t("Select a time window to view inventory usage.")}</div>
@@ -381,7 +382,7 @@ export default function ManagerClient({ initialData }: ManagerClientProps) {
                   <tbody>
                     {usageData.map((row, idx) => (
                       <tr key={idx}>
-                        <td className="p-2">{row.item_name}</td>
+                        <td className="p-2">{translateMenuItem(row.item_name, language)}</td>
                         <td className="p-2">{row.used}</td>
                         <td className="p-2">{row.unit}</td>
                       </tr>
@@ -393,12 +394,12 @@ export default function ManagerClient({ initialData }: ManagerClientProps) {
               <div className="text-center py-8 text-gray-500">{t("No usage data for selected period.")}</div>
             )}
           </div>
-          {/* X-Report Widget */}
+
           <div className="bg-white dark:bg-zinc-800 p-6 rounded shadow xl:col-span-2">
             <h2 className="text-xl font-semibold mb-4">{t("X-Report")}</h2>
             <div className="mb-2 text-sm text-gray-600 dark:text-gray-300">{t("Sales activities per hour for today")}</div>
 
-            {/* Hourly Data Line Graph */}
+
             <div className="mb-4 p-4 bg-gray-50 dark:bg-zinc-700/50 rounded-lg">
               <div className="flex items-center justify-between mb-3">
                 <h3 className="font-semibold text-gray-700 dark:text-gray-200">{t("Hourly Data Today")}</h3>
@@ -428,7 +429,7 @@ export default function ManagerClient({ initialData }: ManagerClientProps) {
 
                   return (
                     <svg viewBox="0 0 500 180" className="w-full h-48">
-                      {/* Background gradient */}
+
                       <defs>
                         <linearGradient id="chartGradient" x1="0%" y1="0%" x2="0%" y2="100%">
                           <stop offset="0%" stopColor={color.fill} stopOpacity="0.3" />
@@ -436,17 +437,17 @@ export default function ManagerClient({ initialData }: ManagerClientProps) {
                         </linearGradient>
                       </defs>
 
-                      {/* Grid lines */}
+
                       {[0, 1, 2, 3, 4].map(i => (
                         <line key={i} x1="45" y1={25 + i * 32} x2="490" y2={25 + i * 32} stroke="#e5e7eb" strokeWidth="1" strokeDasharray="4" />
                       ))}
 
-                      {/* Y-axis labels */}
+
                       {[maxValue, Math.round(maxValue * 0.75), Math.round(maxValue * 0.5), Math.round(maxValue * 0.25), 0].map((val, i) => (
                         <text key={i} x="40" y={30 + i * 32} textAnchor="end" className="text-xs fill-gray-500">{val}</text>
                       ))}
 
-                      {/* X-axis labels (hours) */}
+
                       {hourlyData.map((row, i) => {
                         const x = 55 + i * (435 / Math.max(hourlyData.length - 1, 1));
                         return (
@@ -456,7 +457,7 @@ export default function ManagerClient({ initialData }: ManagerClientProps) {
                         );
                       })}
 
-                      {/* Area fill under line */}
+
                       {(() => {
                         const points = hourlyData.map((h, i) => {
                           const x = 55 + i * (435 / Math.max(hourlyData.length - 1, 1));
@@ -473,7 +474,7 @@ export default function ManagerClient({ initialData }: ManagerClientProps) {
                         );
                       })()}
 
-                      {/* Data line */}
+
                       {(() => {
                         const points = hourlyData.map((h, i) => {
                           const x = 55 + i * (435 / Math.max(hourlyData.length - 1, 1));
@@ -483,7 +484,7 @@ export default function ManagerClient({ initialData }: ManagerClientProps) {
                         return <polyline points={points} fill="none" stroke={color.line} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />;
                       })()}
 
-                      {/* Data points */}
+
                       {hourlyData.map((h, i) => {
                         const x = 55 + i * (435 / Math.max(hourlyData.length - 1, 1));
                         const y = 153 - (getMetricValue(h) / maxValue) * 128;
@@ -497,7 +498,7 @@ export default function ManagerClient({ initialData }: ManagerClientProps) {
               </div>
             </div>
 
-            {/* Payment Breakdown Summary */}
+
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <div className="text-center p-4 bg-green-50 dark:bg-green-900/20 rounded-lg">
                 <div className="text-3xl font-bold text-green-600 dark:text-green-400">{paymentBreakdown.cash.count}</div>
@@ -532,7 +533,7 @@ export default function ManagerClient({ initialData }: ManagerClientProps) {
             </div>
           </div>
 
-          {/* Z-Report Widget */}
+
           <div className="bg-white dark:bg-zinc-800 p-6 rounded shadow xl:col-span-2">
             <div className="flex items-center justify-between mb-4">
               <div>
@@ -545,7 +546,7 @@ export default function ManagerClient({ initialData }: ManagerClientProps) {
               </div>
             </div>
 
-            {/* Summary Cards */}
+
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
               <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg text-center">
                 <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">${salesData?.today.toFixed(2)}</div>
@@ -569,9 +570,9 @@ export default function ManagerClient({ initialData }: ManagerClientProps) {
               </div>
             </div>
 
-            {/* Detailed Breakdown */}
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-              {/* Payment Breakdown */}
+
               <div className="p-4 bg-gray-50 dark:bg-zinc-700/50 rounded-lg">
                 <h4 className="font-semibold mb-3 text-sm">{t("Payment Breakdown")}</h4>
                 <div className="space-y-2">
@@ -603,7 +604,7 @@ export default function ManagerClient({ initialData }: ManagerClientProps) {
                 </div>
               </div>
 
-              {/* Inventory Alerts */}
+
               <div className="p-4 bg-gray-50 dark:bg-zinc-700/50 rounded-lg">
                 <h4 className="font-semibold mb-3 text-sm">{t("Inventory Status")}</h4>
                 <div className="space-y-2">
@@ -642,7 +643,7 @@ export default function ManagerClient({ initialData }: ManagerClientProps) {
               </div>
             </div>
 
-            {/* Run Z-Report Button */}
+
             <button
               className="w-full py-3 rounded-lg bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white font-semibold transition-all shadow-lg hover:shadow-xl"
               onClick={handleRunZReport}
@@ -650,19 +651,19 @@ export default function ManagerClient({ initialData }: ManagerClientProps) {
               {t("Run Z-Report")}
             </button>
 
-            {/* Z-Report Modal */}
+
             {showZReportModal && (
               <div className="fixed inset-0 z-50 flex items-center justify-center">
                 <div className="absolute inset-0 bg-black/50 dark:bg-black/70" onClick={() => setShowZReportModal(false)}></div>
                 <div className="relative z-10 w-[95%] max-w-2xl rounded-xl bg-white dark:bg-zinc-800 shadow-2xl text-black dark:text-white overflow-hidden">
-                  {/* Header */}
+
                   <div className="bg-gradient-to-r from-red-500 to-red-600 p-4 text-white">
                     <h3 className="text-xl font-bold">{t("End of Day Z-Report")}</h3>
                     <p className="text-sm opacity-90">{new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}</p>
                   </div>
 
                   <div className="p-6 max-h-[60vh] overflow-y-auto">
-                    {/* Financial Summary */}
+
                     <div className="mb-6">
                       <h4 className="font-semibold mb-3 text-gray-700 dark:text-gray-200">{t("Financial Summary")}</h4>
                       <div className="bg-gray-50 dark:bg-zinc-700/50 rounded-lg p-4">
@@ -694,7 +695,7 @@ export default function ManagerClient({ initialData }: ManagerClientProps) {
                       </div>
                     </div>
 
-                    {/* Inventory Status */}
+
                     <div className="mb-6">
                       <h4 className="font-semibold mb-3 text-gray-700 dark:text-gray-200">{t("Inventory Status")}</h4>
                       <div className="bg-gray-50 dark:bg-zinc-700/50 rounded-lg p-4">
@@ -729,7 +730,7 @@ export default function ManagerClient({ initialData }: ManagerClientProps) {
                       </div>
                     </div>
 
-                    {/* Best Seller */}
+
                     <div className="mb-6">
                       <h4 className="font-semibold mb-3 text-gray-700 dark:text-gray-200">{t("Top Performer")}</h4>
                       <div className="bg-gradient-to-r from-yellow-50 to-orange-50 dark:from-yellow-900/20 dark:to-orange-900/20 rounded-lg p-4 text-center">
@@ -739,7 +740,7 @@ export default function ManagerClient({ initialData }: ManagerClientProps) {
                     </div>
                   </div>
 
-                  {/* Footer Actions */}
+
                   <div className="border-t border-gray-200 dark:border-zinc-700 p-4 bg-gray-50 dark:bg-zinc-700/50 flex justify-between items-center">
                     <button
                       className="px-6 py-2 rounded-lg border border-gray-300 dark:border-zinc-600 hover:bg-gray-100 dark:hover:bg-zinc-700 font-medium transition-colors"
@@ -876,7 +877,7 @@ export default function ManagerClient({ initialData }: ManagerClientProps) {
             </div>
           </div>
 
-          {/* Void Order Confirmation Modal */}
+
           {showVoidModal && selectedOrder && (
             <div className="fixed inset-0 z-50 flex items-center justify-center">
               <div className="absolute inset-0 bg-black/40 dark:bg-black/60" onClick={() => setShowVoidModal(false)}></div>
@@ -925,7 +926,7 @@ export default function ManagerClient({ initialData }: ManagerClientProps) {
             </div>
           )}
 
-          {/* Total Orders Today Widget */}
+
           <div className="bg-white dark:bg-zinc-800 p-6 rounded shadow">
             <h2 className="text-xl font-semibold mb-4">{t("Total Orders")}</h2>
             <div className="bg-purple-50 dark:bg-purple-900/30 p-6 rounded text-center">
@@ -939,7 +940,7 @@ export default function ManagerClient({ initialData }: ManagerClientProps) {
             </div>
           </div>
 
-          {/* Low Stock Alert Widget */}
+
           <div className="bg-white dark:bg-zinc-800 p-6 rounded shadow">
             <h2 className="text-xl font-semibold mb-4">{t("Low Stock Alert")}</h2>
             <div className="space-y-3 max-h-48 overflow-y-auto">
@@ -963,7 +964,7 @@ export default function ManagerClient({ initialData }: ManagerClientProps) {
             </div>
           </div>
 
-          {/* Peak Hours Widget */}
+
           <div className="bg-white dark:bg-zinc-800 p-6 rounded shadow">
             <h2 className="text-xl font-semibold mb-4">{t("Peak Hours")}</h2>
             <div className="space-y-2">
@@ -994,7 +995,7 @@ export default function ManagerClient({ initialData }: ManagerClientProps) {
             </div>
           </div>
 
-          {/* Edit Menu Prices Widget */}
+
           <div className="bg-white dark:bg-zinc-800 p-6 rounded shadow xl:col-span-2 lg:col-span-1">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-xl font-semibold">{t("Edit Menu Items")}</h2>
@@ -1006,7 +1007,7 @@ export default function ManagerClient({ initialData }: ManagerClientProps) {
               </button>
             </div>
 
-            {/* Add New Menu Item Form */}
+
             {showAddMenu && (
               <div className="mb-4 p-4 bg-green-50 dark:bg-green-900/30 rounded">
                 <h3 className="font-medium mb-3">{t("Add New Menu Item")}</h3>
@@ -1062,8 +1063,8 @@ export default function ManagerClient({ initialData }: ManagerClientProps) {
                   {editingMenu?.menu_item_id === item.menu_item_id ? (
                     <div className="space-y-2">
                       <div className="flex justify-between items-center">
-                        <span className="font-medium">{item.item_name}</span>
-                        <span className="text-xs text-gray-500">({item.category})</span>
+                        <span className="font-medium">{translateMenuItem(item.item_name, language)}</span>
+                        <span className="text-xs text-gray-500">({t(item.category)})</span>
                       </div>
                       <div className="flex items-center gap-2">
                         <span className="text-sm">{t("Price")}: $</span>
@@ -1103,8 +1104,8 @@ export default function ManagerClient({ initialData }: ManagerClientProps) {
                   ) : (
                     <div className="flex justify-between items-center">
                       <div>
-                        <span className="font-medium">{item.item_name}</span>
-                        <span className="text-xs text-gray-500 dark:text-gray-400 ml-2">({item.category})</span>
+                        <span className="font-medium">{translateMenuItem(item.item_name, language)}</span>
+                        <span className="text-xs text-gray-500 dark:text-gray-400 ml-2">({t(item.category)})</span>
                         <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                           {t("Link")}: {item.inventory_link || t("None")}
                         </div>
@@ -1129,7 +1130,7 @@ export default function ManagerClient({ initialData }: ManagerClientProps) {
             </div>
           </div>
 
-          {/* Update Inventory Widget */}
+
           <div className="bg-white dark:bg-zinc-800 p-6 rounded shadow xl:col-span-1 lg:col-span-1">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-xl font-semibold">{t("Update Inventory")}</h2>
@@ -1141,7 +1142,7 @@ export default function ManagerClient({ initialData }: ManagerClientProps) {
               </button>
             </div>
 
-            {/* Add New Inventory Item Form */}
+
             {showAddInventory && (
               <div className="mb-4 p-3 bg-green-50 dark:bg-green-900/30 rounded">
                 <h3 className="font-medium mb-2 text-sm">{t("Add New Ingredient")}</h3>
@@ -1185,7 +1186,7 @@ export default function ManagerClient({ initialData }: ManagerClientProps) {
                   key={idx}
                   className="flex justify-between items-center p-3 rounded bg-gray-50 dark:bg-zinc-700"
                 >
-                  <span className="font-medium text-sm">{item.item_name}</span>
+                  <span className="font-medium text-sm">{translateMenuItem(item.item_name, language)}</span>
                   {editingInventory?.item_name === item.item_name ? (
                     <div className="flex items-center gap-2">
                       <input
@@ -1224,7 +1225,7 @@ export default function ManagerClient({ initialData }: ManagerClientProps) {
             </div>
           </div>
 
-          {/* Staff Management Widget */}
+
           <div className="bg-white dark:bg-zinc-800 p-6 rounded shadow xl:col-span-3 lg:col-span-2">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-xl font-semibold">{t("Staff Management")}</h2>
@@ -1236,7 +1237,7 @@ export default function ManagerClient({ initialData }: ManagerClientProps) {
               </button>
             </div>
 
-            {/* Add New Staff Form */}
+
             {showAddStaff && (
               <div className="mb-4 p-4 bg-green-50 dark:bg-green-900/30 rounded">
                 <h3 className="font-medium mb-3">{t("Add New Staff Member")}</h3>
@@ -1273,7 +1274,7 @@ export default function ManagerClient({ initialData }: ManagerClientProps) {
               </div>
             )}
 
-            {/* Staff List */}
+
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
@@ -1331,11 +1332,11 @@ export default function ManagerClient({ initialData }: ManagerClientProps) {
             </div>
           </div>
 
-          {/* Data Chat Widget */}
+
           <div className="bg-white dark:bg-zinc-800 p-6 rounded shadow xl:col-span-3 lg:col-span-2">
             <h2 className="text-xl font-semibold mb-4">{t("Data Assistant")}</h2>
 
-            {/* Chat Messages */}
+
             <div className="h-64 overflow-y-auto mb-4 p-4 bg-gray-50 dark:bg-zinc-700/50 rounded-lg space-y-3">
               {chatMessages.map((msg, idx) => (
                 <div
@@ -1367,7 +1368,7 @@ export default function ManagerClient({ initialData }: ManagerClientProps) {
               )}
             </div>
 
-            {/* Chat Input */}
+
             <div className="flex gap-2">
               <input
                 type="text"

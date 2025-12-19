@@ -40,6 +40,7 @@ export default function HomeClient({ menuItems, error, hasDbUrl }: HomeClientPro
   // Customization State
   const [customizingItem, setCustomizingItem] = useState<Item | null>(null);
   const [customType, setCustomType] = useState<CustomizationType>(null);
+  const [customDefaults, setCustomDefaults] = useState<{ temperature?: 'hot' | 'cold' } | null>(null);
   const [addedMessage, setAddedMessage] = useState<string | null>(null);
 
   // Persistence
@@ -211,8 +212,15 @@ export default function HomeClient({ menuItems, error, hasDbUrl }: HomeClientPro
     confirmAddToCart(item);
   };
 
-  const handleRequestAdd = (it: Item) => {
+  const handleRequestAdd = (it: Item, defaults?: { temperature?: 'hot' | 'cold' }) => {
     const cat = (it.category || '').toString().trim().toLowerCase();
+
+    // Store defaults if provided
+    if (defaults) {
+      setCustomDefaults(defaults);
+    } else {
+      setCustomDefaults(null);
+    }
 
     // Full customization: milk tea, fruit tea, specialty drinks (size, temp, ice, sugar, toppings)
     const fullCustom = ['milk tea', 'fruit tea', 'specialty drinks', 'specialty'];
@@ -247,11 +255,13 @@ export default function HomeClient({ menuItems, error, hasDbUrl }: HomeClientPro
     setTimeout(() => setAddedMessage(null), 1500);
     setCustomizingItem(null);
     setCustomType(null);
+    setCustomDefaults(null);
   };
 
   const cancelCustomization = () => {
     setCustomizingItem(null);
     setCustomType(null);
+    setCustomDefaults(null);
   };
 
   const [currentMenuItems, setCurrentMenuItems] = useState<Item[]>(menuItems);
@@ -541,6 +551,7 @@ export default function HomeClient({ menuItems, error, hasDbUrl }: HomeClientPro
         <CustomizationModal
           item={customizingItem}
           type={customType}
+          initialTemperature={customDefaults?.temperature}
           onClose={cancelCustomization}
           onConfirm={confirmAddToCart}
         />

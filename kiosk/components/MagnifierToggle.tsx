@@ -5,7 +5,6 @@ export default function MagnifierToggle() {
   const [isActive, setIsActive] = useState(false);
 
   useEffect(() => {
-    // Clean up on unmount just in case
     return () => {
       document.documentElement.classList.remove('text-magnified');
     };
