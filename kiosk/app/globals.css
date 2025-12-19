@@ -224,3 +224,67 @@ button:hover {
 .dark .card-glow:hover {
   box-shadow: 0 0 30px rgba(167, 139, 250, 0.6);
 }
+
+/* Text Magnification Mode
+   Scales text and icons WITHOUT scaling layout containers (width/padding/margin)
+   by overriding font-sizes and icon sizes directly instead of root rem value.
+*/
+
+html.text-magnified body {
+  font-size: 1.25rem !important;
+  /* Base text +25% */
+}
+
+/* Shift text hierarchy up */
+html.text-magnified .text-xs {
+  font-size: 1rem !important;
+}
+
+html.text-magnified .text-sm {
+  font-size: 1.125rem !important;
+}
+
+html.text-magnified .text-base {
+  font-size: 1.25rem !important;
+}
+
+html.text-magnified .text-lg {
+  font-size: 1.5rem !important;
+}
+
+html.text-magnified .text-xl {
+  font-size: 1.75rem !important;
+}
+
+html.text-magnified .text-2xl {
+  font-size: 2rem !important;
+}
+
+html.text-magnified .text-3xl {
+  font-size: 2.25rem !important;
+}
+
+html.text-magnified .text-4xl {
+  font-size: 3rem !important;
+}
+
+/* Scale common icon sizes */
+html.text-magnified svg.w-4 {
+  width: 1.35rem !important;
+  height: 1.35rem !important;
+}
+
+html.text-magnified svg.w-5 {
+  width: 1.6rem !important;
+  height: 1.6rem !important;
+}
+
+html.text-magnified svg.w-6 {
+  width: 2rem !important;
+  height: 2rem !important;
+}
+
+html.text-magnified svg.w-8 {
+  width: 2.5rem !important;
+  height: 2.5rem !important;
+}
